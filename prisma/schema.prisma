@@ -1,0 +1,206 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id            Int          @id @default(autoincrement())
+  email         String       @unique
+  password      String
+  name          String
+  role          String       @default("editor") // superadmin | editor | president
+  permissions   String       @default("[]")    // JSON: ["haberler","duyurular",...]
+  associationId Int?
+  association   Association? @relation(fields: [associationId], references: [id])
+  createdAt     DateTime     @default(now())
+}
+
+model Post {
+  id         Int       @id @default(autoincrement())
+  title      String
+  slug       String    @unique
+  content    String
+  excerpt    String?
+  imageUrl   String?
+  categoryId Int?
+  category   Category? @relation(fields: [categoryId], references: [id])
+  published  Boolean   @default(false)
+  featured   Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model Category {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  slug  String @unique
+  posts Post[]
+}
+
+model Page {
+  id        Int      @id @default(autoincrement())
+  title     String
+  slug      String   @unique
+  content   String
+  pdfUrl    String?  // opsiyonel PDF eki
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Document {
+  id        Int      @id @default(autoincrement())
+  title     String
+  fileUrl   String
+  category  String?
+  createdAt DateTime @default(now())
+}
+
+model BoardMember {
+  id       Int     @id @default(autoincrement())
+  name     String
+  title    String
+  imageUrl String?
+  board    String
+  order    Int     @default(0)
+}
+
+model Announcement {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  important Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Branch {
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String?
+  imageUrl    String?
+  order       Int     @default(0)
+}
+
+model SiteSettings {
+  id    Int    @id @default(autoincrement())
+  key   String @unique
+  value String
+}
+
+// ─── ÜYELİK & BİLEZİK SİSTEMİ ──────────────────────────────────────────────
+
+model Association {
+  id           Int      @id @default(autoincrement())
+  name         String
+  city         String?
+  active       Boolean  @default(true)
+  isBireysel   Boolean  @default(false) // bireysel üyeler bilezik sipariş veremez
+  createdAt    DateTime @default(now())
+  members      Member[]
+  orders       BraceletOrder[]
+  presidents   User[]
+}
+
+model Member {
+  id            Int      @id @default(autoincrement())
+  name          String
+  email         String   @unique
+  password      String
+  phone         String?
+  associationId Int
+  association   Association @relation(fields: [associationId], references: [id])
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  orders        BraceletOrder[]
+  messages      MemberMessage[]
+  resetTokens   PasswordResetToken[]
+}
+
+model PasswordResetToken {
+  id        Int      @id @default(autoincrement())
+  memberId  Int
+  member    Member   @relation(fields: [memberId], references: [id])
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model BraceletPrice {
+  id           Int      @id @default(autoincrement())
+  pricePerUnit Float    // 25 adetlik birim fiyatı (TL)
+  updatedAt    DateTime @updatedAt
+  updatedById  Int?
+}
+
+model BraceletOrder {
+  id             Int      @id @default(autoincrement())
+  memberId       Int
+  member         Member   @relation(fields: [memberId], references: [id])
+  associationId  Int
+  association    Association @relation(fields: [associationId], references: [id])
+  braceletNumber String   // seçilen bilezik numarası
+  quantity       Int      // 25'in katları: 25, 50, 75...
+  pricePerUnit   Float    // sipariş anındaki birim fiyat
+  totalAmount    Float    // otomatik hesaplanan toplam
+  // Onay akışı: pending → assoc_approved → fed_approved | rejected
+  status         String   @default("pending")
+  presidentNote  String?
+  adminNote      String?
+  presidentAt    DateTime?
+  adminAt        DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Message {
+  id          Int      @id @default(autoincrement())
+  title       String
+  content     String
+  senderName  String
+  targetType  String   // all | association | member
+  targetId    Int?
+  createdAt   DateTime @default(now())
+  recipients  MemberMessage[]
+}
+
+model MemberMessage {
+  id        Int      @id @default(autoincrement())
+  memberId  Int
+  member    Member   @relation(fields: [memberId], references: [id])
+  messageId Int
+  message   Message  @relation(fields: [messageId], references: [id])
+  read      Boolean  @default(false)
+  readAt    DateTime?
+}
+
+// ─── SLIDER ──────────────────────────────────────────────────────────────────
+
+model Slider {
+  id         Int      @id @default(autoincrement())
+  title      String
+  subtitle   String?
+  imageUrl   String
+  videoUrl   String?  // opsiyonel video (mp4) — varsa resim yerine oynatılır
+  linkUrl    String?
+  linkLabel  String?
+  active     Boolean  @default(true)
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+}
+
+// ─── SPONSORLAR ──────────────────────────────────────────────────────────────
+
+model Sponsor {
+  id         Int      @id @default(autoincrement())
+  name       String
+  logoUrl    String?
+  websiteUrl String?
+  isMain     Boolean  @default(false)
+  active     Boolean  @default(true)
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+}

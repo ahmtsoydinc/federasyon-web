@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --primary: #2d7330;
+  --primary-dark: #1f4a22;
+  --gold: #e8b830;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Touch dostu minimum dokunma alanı */
+button, a {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Nav linkleri için dokunma alanı istisnası */
+nav a, nav button {
+  min-height: unset;
+  min-width: unset;
+}
+
+/* Resimler mobilde taşmasın */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Tablolar mobilde yatay scroll */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Satır sınırlama */
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.prose img {
+  @apply rounded-lg;
+}
+
+/* Mobil: yatay scroll gizle ama çalışsın */
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.overflow-x-auto::-webkit-scrollbar {
+  display: none;
+}
