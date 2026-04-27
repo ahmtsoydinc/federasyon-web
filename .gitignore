@@ -27,7 +27,7 @@ yarn-debug.log*
 Thumbs.db
 
 # Editor
-.vscode/
+# .vscode/ is intentionally tracked to share project settings
 .idea/
 
 # Deploy / helper scripts
