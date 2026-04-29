@@ -58,11 +58,18 @@ export async function POST(req: NextRequest) {
       chunks.push(records.slice(i, i + CHUNK))
     }
 
+    // _row alanını çıkar (sadece raporlama için kullanıldı)
+    const cleanRecords = records.map(({ _row, ...r }) => r)
+    const cleanChunks: typeof cleanRecords[] = []
+    for (let i = 0; i < cleanRecords.length; i += CHUNK) {
+      cleanChunks.push(cleanRecords.slice(i, i + CHUNK))
+    }
+
     // 3'lü gruplar halinde paralel gönder (Turso bağlantı limitini zorlamadan)
     const GROUP = 3
-    for (let i = 0; i < chunks.length; i += GROUP) {
+    for (let i = 0; i < cleanChunks.length; i += GROUP) {
       await Promise.all(
-        chunks.slice(i, i + GROUP).map(chunk =>
+        cleanChunks.slice(i, i + GROUP).map(chunk =>
           prisma.animalStandard.createMany({ data: chunk })
         )
       )
