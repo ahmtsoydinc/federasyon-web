@@ -601,9 +601,29 @@ export default function YarismaKayitPage() {
                       </option>
                     ))}
                   </select>
-                  <p className="text-xs text-gray-400 mt-1">
-                    Koleksiyon şartları: 2E-2D, 1D-3E veya 3D-1E (maks. 4 hayvan)
-                  </p>
+                  {/* Koleksiyon Şartları Kutusu */}
+                  <div className="mt-3 rounded-xl border-2 border-amber-300 bg-amber-50 p-3">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <span className="text-amber-600 text-base">⚠️</span>
+                      <span className="text-xs font-bold text-amber-800 uppercase tracking-wide">Koleksiyon Şartları</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1.5 mb-2">
+                      {[
+                        { label: '2 Erkek', sub: '2 Dişi' },
+                        { label: '1 Dişi', sub: '3 Erkek' },
+                        { label: '3 Dişi', sub: '1 Erkek' },
+                      ].map((c, i) => (
+                        <div key={i} className="bg-white border border-amber-200 rounded-lg px-2 py-1.5 text-center">
+                          <div className="text-xs font-bold text-amber-800">{c.label}</div>
+                          <div className="text-xs text-amber-600">+ {c.sub}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-amber-700 font-medium">
+                      <span>🐾</span>
+                      <span>Maksimum <strong>4 hayvan</strong> — aynı cins ve renk zorunlu</span>
+                    </div>
+                  </div>
                 </div>
               )}
 
