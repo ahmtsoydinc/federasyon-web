@@ -3,10 +3,10 @@ import { getTokenFromRequest } from '@/lib/auth'
 import * as XLSX from 'xlsx'
 
 function getTursoUrl() {
-  return process.env.TURSO_DATABASE_URL!.replace('libsql://', 'https://')
+  return process.env.DATABASE_URL!.replace('libsql://', 'https://')
 }
 function getTursoToken() {
-  return process.env.TURSO_AUTH_TOKEN!
+  return process.env.DATABASE_AUTH_TOKEN!
 }
 
 async function tursoExecute(sql: string, args: any[] = []) {
