@@ -10,10 +10,11 @@ const BRACELET_STATUS: Record<string, { label: string; color: string }> = {
 }
 
 const ANIMAL_STATUS: Record<string, { label: string; color: string }> = {
-  pending:        { label: 'Onay Bekliyor',      color: 'bg-amber-50 text-amber-700 border-amber-200' },
-  assoc_approved: { label: 'Onaylandı',          color: 'bg-green-50 text-green-700 border-green-200' },
-  fed_approved:   { label: 'Fed. Onaylandı',     color: 'bg-blue-50 text-blue-700 border-blue-200' },
-  rejected:       { label: 'Reddedildi',         color: 'bg-red-50 text-red-700 border-red-200' },
+  pending:        { label: 'Taslak (Gönderilmedi)', color: 'bg-gray-50 text-gray-500 border-gray-200' },
+  submitted:      { label: 'Onay Bekliyor',          color: 'bg-amber-50 text-amber-700 border-amber-200' },
+  assoc_approved: { label: 'Onaylandı',              color: 'bg-green-50 text-green-700 border-green-200' },
+  fed_approved:   { label: 'Fed. Onaylandı',         color: 'bg-blue-50 text-blue-700 border-blue-200' },
+  rejected:       { label: 'Reddedildi',             color: 'bg-red-50 text-red-700 border-red-200' },
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -94,8 +95,9 @@ export default function BaskanPage() {
 
   const pendingOrders = orders.filter(o => o.status === 'pending')
   const otherOrders = orders.filter(o => o.status !== 'pending')
-  const pendingAnimals = animals.filter(a => a.status === 'pending')
-  const otherAnimals = animals.filter(a => a.status !== 'pending')
+  // Başkan sadece "submitted" (üye onayladı) hayvanları işler
+  const pendingAnimals = animals.filter(a => a.status === 'submitted')
+  const otherAnimals = animals.filter(a => a.status !== 'submitted')
 
   return (
     <div>
