@@ -16,7 +16,8 @@ const ANIMAL_TYPES = [
 const BREEDS = [{ value: 'DEV', label: 'Dev' }, { value: 'CUCE', label: 'Cüce' }]
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
-  pending: { label: 'Başkan Onayı Bekleniyor', color: 'text-amber-600 bg-amber-50' },
+  pending: { label: 'Taslak', color: 'text-gray-600 bg-gray-100' },
+  submitted: { label: 'Başkan Onayı Bekleniyor', color: 'text-amber-600 bg-amber-50' },
   assoc_approved: { label: 'Federasyon Onayı Bekleniyor', color: 'text-blue-600 bg-blue-50' },
   fed_approved: { label: 'Onaylandı', color: 'text-green-600 bg-green-50' },
   rejected: { label: 'Reddedildi', color: 'text-red-600 bg-red-50' },
@@ -204,12 +205,16 @@ export default function YarismaKayitPage() {
   const handleSubmitAll = async () => {
     const pending = animals.filter(a => a.status === 'pending')
     if (pending.length === 0) return
-    if (!confirm(`${pending.length} hayvanı başkanın onayına göndermek istiyor musunuz?`)) return
+    if (!confirm(`${pending.length} hayvanı başkanın onayına göndermek istiyor musunuz? Gönderdikten sonra düzenleme yapılamaz.`)) return
     setSubmitAllLoading(true)
-    // Tüm pending hayvanlar zaten pending durumda, başkan panelinde görünüyor
-    // Ek bir "submit" işlemine gerek yok; pending = başkan onayı bekliyor
-    setSubmitted(true)
+    await fetch('/api/competition-animals/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ competitionId: competition.id }),
+    })
     setSubmitAllLoading(false)
+    setSubmitted(true)
+    fetchData()
   }
 
   const setF = (key: keyof FormData, value: string) => setForm(f => ({ ...f, [key]: value }))
@@ -300,6 +305,7 @@ export default function YarismaKayitPage() {
   )
 
   const pendingCount = animals.filter(a => a.status === 'pending').length
+  const submittedCount = animals.filter(a => a.status === 'submitted').length
 
   // Eksik koleksiyon grupları (4'ten az hayvan içeren)
   const incompleteGroups = groups
@@ -393,6 +399,9 @@ export default function YarismaKayitPage() {
                           <button onClick={() => handleDelete(a.id)} className="text-xs text-red-500 hover:text-red-700 px-2 py-1">Sil</button>
                         </>
                       )}
+                      {a.status === 'submitted' && (
+                        <span className="text-xs text-gray-400 italic">Gönderildi 🔒</span>
+                      )}
                       {a.status === 'rejected' && a.rejectionNote && (
                         <span className="text-xs text-red-600 max-w-[160px] truncate" title={a.rejectionNote}>Red: {a.rejectionNote}</span>
                       )}
@@ -414,11 +423,21 @@ export default function YarismaKayitPage() {
             </div>
           )}
 
+          {submittedCount > 0 && pendingCount === 0 && !submitted && (
+            <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+              <p className="text-sm text-green-700">
+                ✅ <strong>{submittedCount}</strong> hayvanınız başkanın onayına gönderildi. Onay bekleniyor.
+              </p>
+            </div>
+          )}
+
           {pendingCount > 0 && !submitted && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-              <p className="text-sm text-amber-800 mb-3">
-                <strong>{pendingCount}</strong> hayvanınız başkan onayı bekliyor. Listeyi gözden geçirdikten sonra onaya gönderin.
+              <p className="text-sm text-amber-800 mb-1">
+                <strong>{pendingCount}</strong> taslak hayvanınız var.
+                {submittedCount > 0 && <span className="text-amber-600"> ({submittedCount} hayvan zaten gönderildi.)</span>}
               </p>
+              <p className="text-xs text-amber-700 mb-3">Gönderdikten sonra düzenleme ve silme işlemi yapılamaz.</p>
               <button
                 onClick={handleSubmitAll}
                 disabled={submitAllLoading || incompleteGroups.length > 0}
