@@ -10,6 +10,7 @@ const navItems = [
   { icon: '🏠', label: 'Ana Sayfa', href: '/uye/dashboard' },
   { icon: '💎', label: 'Bilezik Siparişi', href: '/uye/bilezik-siparis' },
   { icon: '📋', label: 'Siparişlerim', href: '/uye/siparislerim' },
+  { icon: '🏅', label: 'Yarışma Kaydı', href: '/uye/yarisma-kayit' },
   { icon: '✉️', label: 'Mesajlar', href: '/uye/mesajlar' },
 ]
 

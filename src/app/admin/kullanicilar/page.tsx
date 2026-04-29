@@ -17,12 +17,16 @@ const roleLabel: Record<string, string> = {
   superadmin: 'Süper Admin',
   editor: 'Editör',
   president: 'Başkan',
+  moderator: 'Moderatör',
+  hakem: 'Hakem',
 }
 
 const roleBadge: Record<string, string> = {
   superadmin: 'bg-purple-100 text-purple-700',
   editor: 'bg-blue-100 text-blue-700',
   president: 'bg-green-100 text-green-700',
+  moderator: 'bg-orange-100 text-orange-700',
+  hakem: 'bg-teal-100 text-teal-700',
 }
 
 // Admin panel modülleri ve açıklamaları
@@ -173,6 +177,8 @@ export default function KullanicilarPage() {
               <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-primary-500 bg-white text-sm">
                 <option value="editor">Editör (kısıtlı erişim)</option>
+                <option value="moderator">Moderatör (yarışma yönetimi)</option>
+                <option value="hakem">Hakem (kafes değerlendirme)</option>
                 <option value="superadmin">Süper Admin (tam erişim)</option>
               </select>
             </div>
@@ -204,6 +210,14 @@ export default function KullanicilarPage() {
           {permUser.role === 'superadmin' ? (
             <div className="bg-purple-50 text-purple-700 text-sm px-4 py-3 rounded-lg">
               👑 Süper Admin hesabı — tüm sayfalara otomatik olarak erişimi var, ayrıca yetki verilmesine gerek yok.
+            </div>
+          ) : permUser.role === 'moderator' ? (
+            <div className="bg-orange-50 text-orange-700 text-sm px-4 py-3 rounded-lg">
+              🏅 Moderatör hesabı — yarışma, ödül ve hayvan standartları yönetimine tam erişimi var.
+            </div>
+          ) : permUser.role === 'hakem' ? (
+            <div className="bg-teal-50 text-teal-700 text-sm px-4 py-3 rounded-lg">
+              ⚖️ Hakem hesabı — yalnızca <strong>/hakem</strong> portalına erişebilir, yetki atanmasına gerek yok.
             </div>
           ) : (
             <>

@@ -30,6 +30,14 @@ const menuGroups = [
     ],
   },
   {
+    label: 'Yarışma',
+    items: [
+      { icon: '🏅', label: 'Yarışmalar', href: '/admin/yarismalar', perm: 'yarisma' },
+      { icon: '🎖', label: 'Ödül Türleri', href: '/admin/oduller', perm: 'yarisma' },
+      { icon: '📊', label: 'Hayvan Standartları', href: '/admin/hayvan-standartlari', perm: 'yarisma' },
+    ],
+  },
+  {
     label: 'Sistem',
     items: [
       { icon: '👤', label: 'Kullanıcılar', href: '/admin/kullanicilar', perm: 'superadmin' },
@@ -71,6 +79,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const canAccess = (perm: string | null) => {
     if (!user) return false
     if (user.role === 'superadmin') return true
+    if (user.role === 'moderator') return perm !== 'superadmin'
     if (perm === null) return true           // Dashboard → herkes
     if (perm === 'superadmin') return false  // Kullanıcılar → sadece superadmin
     return user.permissions.includes(perm)
@@ -139,7 +148,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div>
               <div className="text-sm font-medium text-white">{user.name}</div>
               <div className="text-xs text-primary-300">
-                {user.role === 'superadmin' ? '👑 Süper Admin' : '✏️ Editör'}
+                {({ superadmin: '👑 Süper Admin', moderator: '🔧 Moderatör', hakem: '⚖️ Hakem', president: '🏛 Başkan', editor: '✏️ Editör' } as Record<string,string>)[user.role] ?? '✏️ Editör'}
               </div>
             </div>
           </div>

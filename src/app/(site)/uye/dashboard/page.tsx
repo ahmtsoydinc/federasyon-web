@@ -57,6 +57,10 @@ export default function UyeDashboard() {
               <div className="text-3xl mb-2">💎</div>
               <div className="text-sm font-medium text-gray-600">Bilezik Sipariş Et</div>
             </Link>
+            <Link href="/uye/yarisma-kayit" className="border-2 border-dashed border-amber-200 rounded-xl p-4 text-center hover:border-amber-400 hover:bg-amber-50 transition-colors">
+              <div className="text-3xl mb-2">🏅</div>
+              <div className="text-sm font-medium text-gray-600">Yarışma Kaydı</div>
+            </Link>
             <Link href="/uye/mesajlar" className="relative border-2 border-dashed border-gray-200 rounded-xl p-4 text-center hover:border-primary-400 hover:bg-primary-50 transition-colors">
               <div className="text-3xl mb-2">✉️</div>
               <div className="text-sm font-medium text-gray-600">Mesajlarım</div>

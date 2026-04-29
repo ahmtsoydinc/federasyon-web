@@ -117,6 +117,8 @@ model Member {
   orders        BraceletOrder[]
   messages      MemberMessage[]
   resetTokens   PasswordResetToken[]
+  competitionAnimals CompetitionAnimal[]
+  collectionGroups   CollectionGroup[]
 }
 
 model PasswordResetToken {
@@ -175,6 +177,97 @@ model MemberMessage {
   message   Message  @relation(fields: [messageId], references: [id])
   read      Boolean  @default(false)
   readAt    DateTime?
+}
+
+// ─── YARIŞMA SİSTEMİ ─────────────────────────────────────────────────────────
+
+model Competition {
+  id                Int                @id @default(autoincrement())
+  name              String
+  location          String?
+  registrationStart DateTime
+  registrationEnd   DateTime
+  eventDate         DateTime?
+  isActive          Boolean            @default(true)
+  animals           CompetitionAnimal[]
+  collectionGroups  CollectionGroup[]
+  createdAt         DateTime           @default(now())
+}
+
+model CollectionGroup {
+  id            Int                @id @default(autoincrement())
+  competitionId Int
+  competition   Competition        @relation(fields: [competitionId], references: [id])
+  memberId      Int
+  member        Member             @relation(fields: [memberId], references: [id])
+  groupNumber   Int                // 1, 2, 3... (Koleksiyon 1, Koleksiyon 2...)
+  groupScore    Float?
+  animals       CompetitionAnimal[]
+  createdAt     DateTime           @default(now())
+}
+
+model CompetitionAnimal {
+  id                   Int             @id @default(autoincrement())
+  competitionId        Int
+  competition          Competition     @relation(fields: [competitionId], references: [id])
+  memberId             Int
+  member               Member          @relation(fields: [memberId], references: [id])
+
+  animalType           String          // TAVUK|HOROZ|ORDEK|GUVERCIN|TAVSAN|KAZ|HINDI|BILDIRCIN
+  breed                String?         // DEV|CUCE (Tavuk, Horoz, Tavşan için)
+  gender               String?         // ERKEK|DISI
+  species              String          // cins
+  color                String          // renk
+
+  // Bilezik (Tavşan hariç)
+  braceletYear         Int?
+  braceletNumber       String?
+
+  // Tavşan kimlik
+  chipNumber           String?         // Cip: 15 hane
+  tattooLeftEar        String?         // Dövme sol kulak: 6 hane
+  tattooRightEar       String?         // Dövme sağ kulak: 7 hane
+  birthMonth           Int?
+  birthYear            Int?
+
+  entryType            String          @default("SINGLE") // SINGLE|COLLECTION
+  collectionGroupId    Int?
+  collectionGroup      CollectionGroup? @relation(fields: [collectionGroupId], references: [id])
+
+  // Onay akışı
+  status               String          @default("pending") // pending|assoc_approved|fed_approved|rejected
+  rejectionNote        String?
+  presidentApprovedAt  DateTime?
+  fedApprovedAt        DateTime?
+
+  // Kafes
+  cageNumber           Int?
+  cageAssignedAt       DateTime?
+
+  // Değerlendirme
+  individualScore      Float?
+  judgeStrengths       String?
+  judgeRecommendations String?
+  awards               String          @default("[]") // JSON: ["Türkiye Şampiyonu"]
+
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+}
+
+model AnimalStandard {
+  id         Int     @id @default(autoincrement())
+  animalType String  // TAVUK|HOROZ|ORDEK|GUVERCIN|TAVSAN|KAZ|HINDI|BILDIRCIN
+  breed      String? // DEV|CUCE
+  species    String  // cins
+  color      String  // renk
+}
+
+model AwardType {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  active    Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
 }
 
 // ─── SLIDER ──────────────────────────────────────────────────────────────────

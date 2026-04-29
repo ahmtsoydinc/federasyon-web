@@ -30,6 +30,9 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Claude Code
+.claude/
+
 # Deploy / helper scripts
 deploy-next.js
 upload-*.js
