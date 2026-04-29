@@ -20,33 +20,48 @@ export async function GET(req: NextRequest) {
     } : {}),
   }
 
+  // Benzersiz cins listesi — sadece species alanını çek, DB'de distinct yap
+  if (searchParams.get('distinct') === 'species') {
+    const rows = await prisma.animalStandard.findMany({
+      where,
+      select: { species: true },
+      distinct: ['species'],
+      orderBy: { species: 'asc' },
+    })
+    return NextResponse.json(rows.map(r => r.species))
+  }
+
+  // Belirli cins için renkler — sadece color alanını çek, DB'de distinct yap
+  const sp = searchParams.get('species')
+  if (sp) {
+    const rows = await prisma.animalStandard.findMany({
+      where: { ...where, species: sp },
+      select: { color: true },
+      distinct: ['color'],
+      orderBy: { color: 'asc' },
+    })
+    return NextResponse.json(rows.map(r => r.color))
+  }
+
+  // Sayfalı liste (admin panel)
+  if (searchParams.get('count') === 'true') {
+    const [total, data] = await Promise.all([
+      prisma.animalStandard.count({ where }),
+      prisma.animalStandard.findMany({
+        where,
+        orderBy: [{ species: 'asc' }, { color: 'asc' }],
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+    ])
+    return NextResponse.json({ total, data })
+  }
+
+  // Tam liste
   const standards = await prisma.animalStandard.findMany({
     where,
     orderBy: [{ species: 'asc' }, { color: 'asc' }],
-    ...(!searchParams.get('distinct') && !searchParams.get('species') && searchParams.get('page')
-      ? { skip: (page - 1) * limit, take: limit }
-      : {}),
   })
-
-  // Toplam sayı (sayfalama için)
-  if (searchParams.get('count') === 'true') {
-    const total = await prisma.animalStandard.count({ where })
-    return NextResponse.json({ total, data: standards })
-  }
-
-  // Benzersiz cins listesi
-  if (searchParams.get('distinct') === 'species') {
-    const species = [...new Set(standards.map(s => s.species))].sort()
-    return NextResponse.json(species)
-  }
-
-  // Belirli cins için renkler
-  if (searchParams.get('species')) {
-    const sp = searchParams.get('species')
-    const colors = standards.filter(s => s.species === sp).map(s => s.color)
-    return NextResponse.json([...new Set(colors)].sort())
-  }
-
   return NextResponse.json(standards)
 }
 
