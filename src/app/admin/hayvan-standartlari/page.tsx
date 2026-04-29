@@ -87,7 +87,7 @@ export default function HayvanStandartlariPage() {
   // --- Excel ---
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
-  const [uploadResult, setUploadResult] = useState<{ imported?: number; error?: string } | null>(null)
+  const [uploadResult, setUploadResult] = useState<{ imported?: number; skipped?: number; skippedRows?: { satir: number; neden: string; veri: string }[]; error?: string } | null>(null)
 
   const handleUpload = async () => {
     if (!file) return
@@ -312,8 +312,45 @@ export default function HayvanStandartlariPage() {
           </button>
 
           {uploadResult && (
-            <div className={`mt-4 rounded-lg p-4 ${uploadResult.error ? 'bg-red-50 border border-red-200 text-red-700' : 'bg-green-50 border border-green-200 text-green-700'}`}>
-              {uploadResult.error ?? `${uploadResult.imported?.toLocaleString('tr-TR')} standart başarıyla içe aktarıldı.`}
+            <div className="mt-4 space-y-3">
+              {uploadResult.error ? (
+                <div className="rounded-lg p-4 bg-red-50 border border-red-200 text-red-700 text-sm">
+                  {uploadResult.error}
+                </div>
+              ) : (
+                <div className="rounded-lg p-4 bg-green-50 border border-green-200 text-green-700 text-sm">
+                  <p className="font-medium">✓ {uploadResult.imported?.toLocaleString('tr-TR')} standart içe aktarıldı.</p>
+                  {(uploadResult.skipped ?? 0) > 0 && (
+                    <p className="mt-1 text-amber-700">{uploadResult.skipped} satır atlandı (boş alan içeriyor).</p>
+                  )}
+                </div>
+              )}
+
+              {uploadResult.skippedRows && uploadResult.skippedRows.length > 0 && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                  <p className="text-xs font-bold text-amber-800 mb-2">⚠️ Atlanan Satırlar ({uploadResult.skippedRows.length})</p>
+                  <div className="overflow-x-auto max-h-48 overflow-y-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="text-left text-amber-700 border-b border-amber-200">
+                          <th className="pb-1 pr-3">Excel Satırı</th>
+                          <th className="pb-1 pr-3">Neden</th>
+                          <th className="pb-1">Veri</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {uploadResult.skippedRows.map((r, i) => (
+                          <tr key={i} className="border-b border-amber-100">
+                            <td className="py-1 pr-3 text-amber-800 font-medium">{r.satir}. satır</td>
+                            <td className="py-1 pr-3 text-red-600">{r.neden}</td>
+                            <td className="py-1 text-amber-700">{r.veri}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

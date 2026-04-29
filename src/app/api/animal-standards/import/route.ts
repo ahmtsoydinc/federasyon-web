@@ -34,7 +34,15 @@ export async function POST(req: NextRequest) {
       color: (row['Color'] || row['color'] || row['Renk'] || '').toString().trim(),
     })
 
-    const records = rows.map(normalize).filter(r => r.animalType && r.species && r.color)
+    const normalized = rows.map((row, i) => ({ ...normalize(row), _row: i + 2 })) // +2: header satırı için
+    const records = normalized.filter(r => r.animalType && r.species && r.color)
+    const skipped = normalized
+      .filter(r => !r.animalType || !r.species || !r.color)
+      .map(r => ({
+        satir: r._row,
+        neden: !r.animalType ? 'AnimalType boş' : !r.species ? 'Species boş' : 'Color boş',
+        veri: `${r.animalType || '?'} / ${r.species || '?'} / ${r.color || '?'}`,
+      }))
 
     if (records.length === 0) {
       return NextResponse.json({ error: 'Geçerli satır bulunamadı. Sütunlar: AnimalType, Breed, Species, Color' }, { status: 400 })
@@ -60,7 +68,11 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    return NextResponse.json({ imported: records.length })
+    return NextResponse.json({
+      imported: records.length,
+      skipped: skipped.length,
+      skippedRows: skipped,
+    })
   } catch (err: any) {
     console.error('Animal standards import error:', err)
     return NextResponse.json({ error: err?.message ?? 'Sunucu hatası oluştu' }, { status: 500 })
