@@ -42,6 +42,7 @@ const MODULES = [
   { key: 'uyeler',       label: '👥 Üyeler',             desc: 'Üye görüntüleme' },
   { key: 'bilezik',      label: '💎 Bilezik Sistemi',    desc: 'Siparişler ve fiyat yönetimi' },
   { key: 'mesaj',        label: '✉️ Mesaj Gönder',       desc: 'Üyelere mesaj gönderme' },
+  { key: 'yarisma',      label: '🏅 Yarışma Sistemi',    desc: 'Yarışma, kafes, puan ve ödül yönetimi' },
   { key: 'sponsorlar',   label: '🏆 Sponsorlar',         desc: 'Sponsor ekleme/düzenleme' },
   { key: 'menu',         label: '🗂 Menü Yönetimi',      desc: 'Site menüsü düzenleme' },
   { key: 'site-ayarlari',label: '📱 Sosyal Medya',       desc: 'Sosyal medya ayarları' },
