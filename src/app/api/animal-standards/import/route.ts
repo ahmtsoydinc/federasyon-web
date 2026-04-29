@@ -1,35 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
 import { getTokenFromRequest } from '@/lib/auth'
 import * as XLSX from 'xlsx'
-
-function getTursoUrl() {
-  return process.env.DATABASE_URL!.replace('libsql://', 'https://')
-}
-function getTursoToken() {
-  return process.env.DATABASE_AUTH_TOKEN!
-}
-
-async function tursoExecute(sql: string, args: any[] = []) {
-  const res = await fetch(`${getTursoUrl()}/v2/pipeline`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${getTursoToken()}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ requests: [{ type: 'execute', stmt: { sql, args } }, { type: 'close' }] }),
-  })
-  return res.json()
-}
-
-async function tursoBatch(statements: { sql: string; args: any[] }[]) {
-  const requests = [
-    ...statements.map(s => ({ type: 'execute', stmt: { sql: s.sql, args: s.args } })),
-    { type: 'close' },
-  ]
-  const res = await fetch(`${getTursoUrl()}/v2/pipeline`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${getTursoToken()}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ requests }),
-  })
-  return res.json()
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -68,23 +40,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Geçerli satır bulunamadı. Sütunlar: AnimalType, Breed, Species, Color' }, { status: 400 })
     }
 
-    // Mevcut kayıtları temizle
-    await tursoExecute('DELETE FROM AnimalStandard')
+    // Mevcut kayıtları sil
+    await prisma.animalStandard.deleteMany()
 
-    // 500'lü batch'ler halinde Turso pipeline API ile ekle
+    // 500'lü chunk'ları paralel olarak ekle (hem büyük hem eş zamanlı)
     const CHUNK = 500
+    const chunks: typeof records[] = []
     for (let i = 0; i < records.length; i += CHUNK) {
-      const chunk = records.slice(i, i + CHUNK)
-      const statements = chunk.map(r => ({
-        sql: 'INSERT INTO AnimalStandard (animalType, breed, species, color) VALUES (?, ?, ?, ?)',
-        args: [
-          { type: 'text', value: r.animalType },
-          r.breed ? { type: 'text', value: r.breed } : { type: 'null' },
-          { type: 'text', value: r.species },
-          { type: 'text', value: r.color },
-        ],
-      }))
-      await tursoBatch(statements)
+      chunks.push(records.slice(i, i + CHUNK))
+    }
+
+    // 3'lü gruplar halinde paralel gönder (Turso bağlantı limitini zorlamadan)
+    const GROUP = 3
+    for (let i = 0; i < chunks.length; i += GROUP) {
+      await Promise.all(
+        chunks.slice(i, i + GROUP).map(chunk =>
+          prisma.animalStandard.createMany({ data: chunk })
+        )
+      )
     }
 
     return NextResponse.json({ imported: records.length })
