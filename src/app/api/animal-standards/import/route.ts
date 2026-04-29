@@ -27,9 +27,18 @@ export async function POST(req: NextRequest) {
 
     if (rows.length === 0) return NextResponse.json({ error: 'Dosya boş' }, { status: 400 })
 
+    // Türkçe karakterleri ASCII'ye çevir (CÜCE → CUCE, vb.)
+    const trToAscii = (s: string) => s
+      .replace(/Ü/g, 'U').replace(/ü/g, 'u')
+      .replace(/Ö/g, 'O').replace(/ö/g, 'o')
+      .replace(/Ş/g, 'S').replace(/ş/g, 's')
+      .replace(/İ/g, 'I').replace(/ı/g, 'i')
+      .replace(/Ğ/g, 'G').replace(/ğ/g, 'g')
+      .replace(/Ç/g, 'C').replace(/ç/g, 'c')
+
     const normalize = (row: any) => ({
-      animalType: (row['AnimalType'] || row['animalType'] || row['Tür'] || row['Tur'] || '').toString().trim().toUpperCase(),
-      breed: (row['Breed'] || row['breed'] || row['Irk'] || '').toString().trim().toUpperCase() || null,
+      animalType: trToAscii((row['AnimalType'] || row['animalType'] || row['Tür'] || row['Tur'] || '').toString().trim()).toUpperCase(),
+      breed: trToAscii((row['Breed'] || row['breed'] || row['Irk'] || '').toString().trim()).toUpperCase() || null,
       species: (row['Species'] || row['species'] || row['Cins'] || '').toString().trim(),
       color: (row['Color'] || row['color'] || row['Renk'] || '').toString().trim(),
     })
