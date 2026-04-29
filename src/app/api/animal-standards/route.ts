@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   const standards = await prisma.animalStandard.findMany({
     where: {
       ...(animalType && { animalType }),
-      ...(breed && breed !== 'all' ? { breed } : {}),
+      ...(breed && breed !== 'all' && animalType !== 'TAVSAN' ? { breed } : {}),
     },
     orderBy: [{ species: 'asc' }, { color: 'asc' }],
   })
