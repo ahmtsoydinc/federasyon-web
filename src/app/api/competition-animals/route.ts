@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
       },
       orderBy: { createdAt: 'desc' },
       include: {
-        member: { select: { id: true, name: true, association: { select: { id: true, name: true } } } },
+        member: { select: { id: true, name: true, phone: true, association: { select: { id: true, name: true } } } },
         collectionGroup: { select: { id: true, groupNumber: true, groupScore: true } },
       },
     })

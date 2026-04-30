@@ -20,7 +20,7 @@ interface Animal {
   species: string; color: string; braceletYear: number | null; braceletNumber: string | null
   chipNumber: string | null; status: string; cageNumber: number | null
   individualScore: number | null; awards: string; entryType: string
-  member: { id: number; name: string; association: { id: number; name: string } }
+  member: { id: number; name: string; phone: string | null; association: { id: number; name: string } }
   collectionGroup: { id: number; groupNumber: number; groupScore: number | null } | null
 }
 
@@ -292,6 +292,23 @@ export default function YarismaDetailPage() {
                       {a.entryType === 'COLLECTION' && a.collectionGroup && (
                         <div className="text-xs text-purple-600 mt-0.5">Koleksiyon {a.collectionGroup.groupNumber}</div>
                       )}
+                      {/* Üye bilgileri */}
+                      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+                        <span className="text-xs text-gray-700 flex items-center gap-1">
+                          <span className="text-gray-400">👤</span>
+                          <span className="font-medium">{a.member.name}</span>
+                        </span>
+                        <span className="text-xs text-gray-600 flex items-center gap-1">
+                          <span className="text-gray-400">🏛</span>
+                          {a.member.association.name}
+                        </span>
+                        {a.member.phone && (
+                          <span className="text-xs text-gray-600 flex items-center gap-1">
+                            <span className="text-gray-400">📞</span>
+                            {a.member.phone}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <button
                       onClick={() => handleSaveScore(a)}
