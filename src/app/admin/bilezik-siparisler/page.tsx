@@ -52,6 +52,15 @@ export default function BilezikSiparislerPage() {
     fetchOrders()
   }
 
+  const handleDelete = async (id: number, orderNum: string) => {
+    if (!confirm(`Sipariş #${orderNum} kalıcı olarak silinecek. Emin misiniz?`)) return
+    setProcessing(id)
+    await fetch(`/api/bracelet/orders/${id}`, { method: 'DELETE' })
+    setProcessing(null)
+    setExpandedId(null)
+    fetchOrders()
+  }
+
   const counts = {
     all: orders.length,
     pending: orders.filter(o => o.status === 'pending').length,
@@ -159,6 +168,14 @@ export default function BilezikSiparislerPage() {
                         ₺{Number(o.totalAmount).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
                       </span>
                       <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${s.badge}`}>{s.label}</span>
+                      <button
+                        onClick={e => { e.stopPropagation(); handleDelete(o.id, String(o.id)) }}
+                        disabled={processing === o.id}
+                        title="Siparişi sil"
+                        className="text-gray-400 hover:text-red-600 transition-colors disabled:opacity-40 p-1"
+                      >
+                        🗑
+                      </button>
                       <span className="text-gray-400 text-xs">{isExpanded ? '▲' : '▼'}</span>
                     </div>
                   </div>
@@ -208,6 +225,17 @@ export default function BilezikSiparislerPage() {
                         <span className="font-medium text-blue-700">Federasyon Notu:</span> {o.adminNote}
                       </div>
                     )}
+
+                    {/* Silme */}
+                    <div className="mt-4 pt-3 border-t border-gray-100 flex justify-end">
+                      <button
+                        onClick={() => handleDelete(o.id, String(o.id))}
+                        disabled={processing === o.id}
+                        className="flex items-center gap-1.5 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40"
+                      >
+                        🗑 Siparişi Kalıcı Olarak Sil
+                      </button>
+                    </div>
 
                     {/* Federasyon onay/ret (sadece assoc_approved için) */}
                     {canFedApprove && (
