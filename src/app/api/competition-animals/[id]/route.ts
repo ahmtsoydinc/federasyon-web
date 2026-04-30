@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getMemberFromRequest } from '@/lib/memberAuth'
+import { getMemberFromRequest, getPresidentFromRequest } from '@/lib/memberAuth'
 import { getTokenFromRequest } from '@/lib/auth'
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
@@ -17,6 +17,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   const adminUser = getTokenFromRequest(req)
+  const president = getPresidentFromRequest(req)
   const member = getMemberFromRequest(req)
 
   const id = parseInt(params.id)
@@ -53,6 +54,42 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         ...(collectionGroupId !== undefined && { collectionGroupId: collectionGroupId ? parseInt(collectionGroupId) : null }),
         ...(status !== undefined && { status }),
         ...(rejectionNote !== undefined && { rejectionNote }),
+      },
+    })
+    return NextResponse.json(updated)
+  }
+
+  if (president) {
+    // Başkan: kendi derneğinin submitted hayvanlarını düzenleyebilir
+    const animal = await prisma.competitionAnimal.findUnique({
+      where: { id },
+      include: { member: { select: { associationId: true } } },
+    })
+    if (!animal) return NextResponse.json({ error: 'Bulunamadı' }, { status: 404 })
+    if (animal.member.associationId !== president.associationId) {
+      return NextResponse.json({ error: 'Yetkisiz' }, { status: 403 })
+    }
+
+    const {
+      animalType, breed, gender, species, color, braceletYear, braceletNumber,
+      chipNumber, tattooLeftEar, tattooRightEar, birthMonth, birthYear,
+    } = body
+
+    const updated = await prisma.competitionAnimal.update({
+      where: { id },
+      data: {
+        ...(animalType !== undefined && { animalType }),
+        ...(breed !== undefined && { breed }),
+        ...(gender !== undefined && { gender }),
+        ...(species !== undefined && { species }),
+        ...(color !== undefined && { color }),
+        ...(braceletYear !== undefined && { braceletYear: braceletYear ? parseInt(braceletYear) : null }),
+        ...(braceletNumber !== undefined && { braceletNumber }),
+        ...(chipNumber !== undefined && { chipNumber }),
+        ...(tattooLeftEar !== undefined && { tattooLeftEar }),
+        ...(tattooRightEar !== undefined && { tattooRightEar }),
+        ...(birthMonth !== undefined && { birthMonth: birthMonth ? parseInt(birthMonth) : null }),
+        ...(birthYear !== undefined && { birthYear: birthYear ? parseInt(birthYear) : null }),
       },
     })
     return NextResponse.json(updated)
