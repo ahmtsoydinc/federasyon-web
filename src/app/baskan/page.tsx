@@ -66,6 +66,10 @@ export default function BaskanPage() {
   const [editSubmitting, setEditSubmitting] = useState(false)
   const [editError, setEditError] = useState('')
 
+  // Çoklu seçim state
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [bulkProcessing, setBulkProcessing] = useState(false)
+
   const fetchOrders = () => {
     setOrdersLoading(true)
     fetch('/api/bracelet/orders')
@@ -101,6 +105,31 @@ export default function BaskanPage() {
     })
     setOrderProcessing(null)
     fetchOrders()
+  }
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = (ids: number[]) => {
+    setSelectedIds(prev => prev.size === ids.length ? new Set() : new Set(ids))
+  }
+
+  const handleBulkApprove = async (ids: number[]) => {
+    if (ids.length === 0) return
+    setBulkProcessing(true)
+    await fetch('/api/competition-animals/bulk-approve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids }),
+    })
+    setBulkProcessing(false)
+    setSelectedIds(new Set())
+    fetchAnimals()
   }
 
   const handleAnimalApprove = async (id: number) => {
@@ -300,27 +329,57 @@ export default function BaskanPage() {
                 <>
                   {pendingAnimals.length > 0 && (
                     <div className="mb-8">
-                      <h2 className="text-lg font-semibold text-gray-700 mb-4">Onay Bekleyen Kayıtlar ({pendingAnimals.length})</h2>
+                      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                        <h2 className="text-lg font-semibold text-gray-700">Onay Bekleyen Kayıtlar ({pendingAnimals.length})</h2>
+                        <div className="flex items-center gap-3">
+                          <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.size === pendingAnimals.length && pendingAnimals.length > 0}
+                              onChange={() => toggleSelectAll(pendingAnimals.map(a => a.id))}
+                              className="w-4 h-4 rounded accent-primary-600"
+                            />
+                            Tümünü Seç
+                          </label>
+                          {selectedIds.size > 0 && (
+                            <button
+                              onClick={() => handleBulkApprove(Array.from(selectedIds))}
+                              disabled={bulkProcessing}
+                              className="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-lg text-sm disabled:opacity-60 transition-colors">
+                              {bulkProcessing ? 'Onaylanıyor...' : `✓ ${selectedIds.size} Kaydı Onayla`}
+                            </button>
+                          )}
+                        </div>
+                      </div>
                       <div className="space-y-4">
                         {pendingAnimals.map(a => (
-                          <div key={a.id} className="bg-white rounded-xl shadow-sm border-2 border-amber-100 p-5">
-                            <div className="mb-3">
-                              <div className="font-bold text-gray-800">
-                                {TYPE_LABELS[a.animalType] || a.animalType}
-                                {a.breed && <span className="text-gray-500 font-normal text-sm ml-1">({a.breed === 'DEV' ? 'Dev' : 'Cüce'})</span>}
-                                {a.gender && <span className="text-gray-500 font-normal text-sm ml-1">{a.gender === 'ERKEK' ? '· Erkek' : '· Dişi'}</span>}
+                          <div key={a.id}
+                            className={`bg-white rounded-xl shadow-sm border-2 p-5 transition-colors ${selectedIds.has(a.id) ? 'border-green-300 bg-green-50/30' : 'border-amber-100'}`}>
+                            <div className="flex items-start gap-3 mb-3">
+                              <input
+                                type="checkbox"
+                                checked={selectedIds.has(a.id)}
+                                onChange={() => toggleSelect(a.id)}
+                                className="mt-1 w-4 h-4 rounded accent-primary-600 flex-shrink-0"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="font-bold text-gray-800">
+                                  {TYPE_LABELS[a.animalType] || a.animalType}
+                                  {a.breed && <span className="text-gray-500 font-normal text-sm ml-1">({a.breed === 'DEV' ? 'Dev' : 'Cüce'})</span>}
+                                  {a.gender && <span className="text-gray-500 font-normal text-sm ml-1">{a.gender === 'ERKEK' ? '· Erkek' : '· Dişi'}</span>}
+                                </div>
+                                <div className="text-sm text-gray-600 mt-0.5">{a.species} / {a.color}</div>
+                                {a.entryType === 'COLLECTION' && a.collectionGroup && (
+                                  <div className="text-xs text-purple-600 mt-0.5">Koleksiyon {a.collectionGroup.groupNumber}</div>
+                                )}
+                                <div className="text-xs text-gray-400 mt-0.5">
+                                  {a.animalType === 'TAVSAN'
+                                    ? (a.chipNumber ? `Cip: ${a.chipNumber}` : `Dövme: ${a.tattooLeftEar} / ${a.tattooRightEar}`)
+                                    : (a.braceletYear ? `${a.braceletYear} / ${a.braceletNumber || '—'}` : '—')
+                                  }
+                                </div>
+                                <div className="text-xs text-gray-400 mt-0.5">Üye: {a.member?.name}</div>
                               </div>
-                              <div className="text-sm text-gray-600 mt-0.5">{a.species} / {a.color}</div>
-                              {a.entryType === 'COLLECTION' && a.collectionGroup && (
-                                <div className="text-xs text-purple-600 mt-0.5">Koleksiyon {a.collectionGroup.groupNumber}</div>
-                              )}
-                              <div className="text-xs text-gray-400 mt-0.5">
-                                {a.animalType === 'TAVSAN'
-                                  ? (a.chipNumber ? `Cip: ${a.chipNumber}` : `Dövme: ${a.tattooLeftEar} / ${a.tattooRightEar}`)
-                                  : (a.braceletYear ? `${a.braceletYear} / ${a.braceletNumber || '—'}` : '—')
-                                }
-                              </div>
-                              <div className="text-xs text-gray-400 mt-0.5">Üye: {a.member?.name}</div>
                             </div>
                             <textarea value={animalNotes[a.id] || ''} onChange={e => setAnimalNotes({ ...animalNotes, [a.id]: e.target.value })}
                               placeholder="Red notu (opsiyonel)" rows={2}
