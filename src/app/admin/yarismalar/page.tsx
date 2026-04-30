@@ -35,6 +35,8 @@ export default function YarismalarPage() {
   const [editId, setEditId] = useState<number | null>(null)
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+  const [deleting, setDeleting] = useState<number | null>(null)
 
   const fetchAll = () => {
     setLoading(true)
@@ -44,7 +46,13 @@ export default function YarismalarPage() {
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { fetchAll() }, [])
+  useEffect(() => {
+    fetchAll()
+    fetch('/api/auth/me')
+      .then(r => r.json())
+      .then(d => { if (d.user?.role === 'superadmin') setIsSuperAdmin(true) })
+      .catch(() => {})
+  }, [])
 
   const openCreate = () => {
     setEditId(null)
@@ -83,6 +91,14 @@ export default function YarismalarPage() {
     }
     setSaving(false)
     setShowModal(false)
+    fetchAll()
+  }
+
+  const handleDelete = async (c: Competition) => {
+    if (!confirm(`"${c.name}" yarışması ve tüm kayıtları kalıcı olarak silinecek. Emin misiniz?`)) return
+    setDeleting(c.id)
+    await fetch(`/api/competitions/${c.id}`, { method: 'DELETE' })
+    setDeleting(null)
     fetchAll()
   }
 
@@ -155,6 +171,15 @@ export default function YarismalarPage() {
                   >
                     Yönet →
                   </Link>
+                  {isSuperAdmin && (
+                    <button
+                      onClick={() => handleDelete(c)}
+                      disabled={deleting === c.id}
+                      className="text-xs font-medium px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40"
+                    >
+                      {deleting === c.id ? '...' : '🗑 Sil'}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
