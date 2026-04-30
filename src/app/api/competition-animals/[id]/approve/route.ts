@@ -16,8 +16,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (animal.member.associationId !== president.associationId) {
     return NextResponse.json({ error: 'Yetkisiz' }, { status: 403 })
   }
-  if (animal.status !== 'pending') {
-    return NextResponse.json({ error: 'Sadece bekleyen kayıtlar onaylanabilir' }, { status: 400 })
+  if (animal.status !== 'submitted') {
+    return NextResponse.json({ error: 'Sadece gönderilmiş kayıtlar onaylanabilir' }, { status: 400 })
   }
 
   const updated = await prisma.competitionAnimal.update({
