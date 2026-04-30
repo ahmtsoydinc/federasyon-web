@@ -23,13 +23,15 @@ interface NavItem {
 // Üye Girişi her zaman sabit kalır
 const UYE_ITEM: NavItem = {
   id: 999,
-  label: 'Üye Girişi',
+  label: 'Giriş',
   href: '/uye-girisi',
   active: true,
   children: [
-    { label: 'Giriş Yap', href: '/uye-girisi' },
-    { label: 'Üye Ol', href: '/uye-ol' },
-    { label: 'Üye Paneli', href: '/uye/dashboard' },
+    { label: '👤 Üye Girişi', href: '/uye-girisi' },
+    { label: '📝 Üye Ol', href: '/uye-ol' },
+    { label: '🖥️ Üye Paneli', href: '/uye/dashboard' },
+    { divider: true, label: '', href: '' },
+    { label: '⚖️ Hakem Girişi', href: '/hakem/giris' },
     { label: '🏛 Dernek Başkanı Girişi', href: '/baskan/giris' },
   ],
 }
@@ -220,11 +222,15 @@ export default function Navbar() {
           <div className="px-4 py-3 border-t border-gray-100 bg-gray-50 flex gap-2 flex-wrap">
             <Link href="/uye-girisi" onClick={closeMobile}
               className="flex-1 text-center text-sm font-medium text-primary-700 border border-primary-300 rounded-lg py-2.5 hover:bg-primary-50 transition-colors">
-              Üye Girişi
+              👤 Üye Girişi
             </Link>
             <Link href="/uye-ol" onClick={closeMobile}
               className="flex-1 text-center text-sm font-medium text-white bg-primary-600 rounded-lg py-2.5 hover:bg-primary-700 transition-colors">
               Üye Ol
+            </Link>
+            <Link href="/hakem/giris" onClick={closeMobile}
+              className="flex-1 text-center text-sm font-medium text-amber-800 border border-amber-200 bg-amber-50 rounded-lg py-2.5 hover:bg-amber-100 transition-colors">
+              ⚖️ Hakem
             </Link>
             <Link href="/baskan/giris" onClick={closeMobile}
               className="w-full text-center text-sm font-medium text-primary-800 border border-primary-200 bg-primary-50 rounded-lg py-2.5 hover:bg-primary-100 transition-colors">
