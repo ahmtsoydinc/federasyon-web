@@ -79,6 +79,26 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* Portal Girişleri */}
+      <section className="bg-white border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 py-5">
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Link href="/uye-girisi"
+              className="flex items-center gap-2.5 bg-primary-50 hover:bg-primary-100 border border-primary-200 text-primary-800 font-medium px-5 py-2.5 rounded-xl text-sm transition-colors">
+              <span className="text-lg">👤</span> Üye Girişi
+            </Link>
+            <Link href="/hakem/giris"
+              className="flex items-center gap-2.5 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 font-medium px-5 py-2.5 rounded-xl text-sm transition-colors">
+              <span className="text-lg">⚖️</span> Hakem Girişi
+            </Link>
+            <Link href="/baskan/giris"
+              className="flex items-center gap-2.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-800 font-medium px-5 py-2.5 rounded-xl text-sm transition-colors">
+              <span className="text-lg">🏛️</span> Dernek Başkanı
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* Hero Slider */}
       {sliders.length > 0 && (
         <HeroSlider
@@ -245,6 +265,7 @@ export default async function HomePage() {
                   ['📄 Belgeler', '/belgeler'],
                   ['🏛 Yönetim Kurulu', '/yonetim'],
                   ['🌿 Branşlar', '/branslar'],
+                  ['⚖️ Hakem Girişi', '/hakem/giris'],
                   ['📞 İletişim', '/iletisim'],
                 ].map(([label, href]) => (
                   <li key={href}>
