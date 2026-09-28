@@ -26,6 +26,11 @@ interface Animal {
 
 interface AwardType { id: number; name: string }
 
+interface EditForm {
+  animalType: string; breed: string; gender: string; species: string; color: string
+  braceletYear: string; braceletNumber: string; chipNumber: string; cageNumber: string; status: string
+}
+
 export default function YarismaDetailPage() {
   const { id } = useParams()
   const [tab, setTab] = useState<'hayvanlar' | 'puanlar' | 'kafes'>('hayvanlar')
@@ -38,6 +43,20 @@ export default function YarismaDetailPage() {
   const [assignResult, setAssignResult] = useState<string | null>(null)
   const [scores, setScores] = useState<Record<number, { score: string; groupScore: string; selectedAwards: string[] }>>({})
   const [saving, setSaving] = useState<number | null>(null)
+  const [exporting, setExporting] = useState(false)
+
+  // Rol kontrolü
+  const [userRole, setUserRole] = useState<string | null>(null)
+  const canEdit = userRole === 'superadmin' || userRole === 'editor'
+
+  // Düzenleme modal
+  const [editingAnimal, setEditingAnimal] = useState<Animal | null>(null)
+  const [editForm, setEditForm] = useState<EditForm | null>(null)
+  const [editSaving, setEditSaving] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/auth/me').then(r => r.json()).then(d => setUserRole(d.user?.role ?? null))
+  }, [])
 
   const fetchAnimals = useCallback(() => {
     setLoading(true)
@@ -48,7 +67,6 @@ export default function YarismaDetailPage() {
       .then(r => r.json())
       .then((data: Animal[]) => {
         setAnimals(data)
-        // Mevcut puan/ödül verilerini state'e aktar
         const s: typeof scores = {}
         data.forEach(a => {
           s[a.id] = {
@@ -110,10 +128,7 @@ export default function YarismaDetailPage() {
         awards: s?.selectedAwards || [],
       }),
     })
-    // Koleksiyon grup puanı
     if (animal.collectionGroup && s?.groupScore !== '') {
-      // Tüm grup hayvanlarını güncelle (collectionGroup.groupScore)
-      // Basit yaklaşım: collectionGroupId üzerinden güncelle
       await fetch(`/api/collection-groups/${animal.collectionGroup.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -134,8 +149,52 @@ export default function YarismaDetailPage() {
     })
   }
 
-  const assocApprovedCount = animals.filter(a => a.status === 'assoc_approved').length
-  const [exporting, setExporting] = useState(false)
+  const openEdit = (animal: Animal) => {
+    setEditingAnimal(animal)
+    setEditForm({
+      animalType: animal.animalType,
+      breed: animal.breed ?? '',
+      gender: animal.gender ?? '',
+      species: animal.species,
+      color: animal.color,
+      braceletYear: animal.braceletYear ? String(animal.braceletYear) : '',
+      braceletNumber: animal.braceletNumber ?? '',
+      chipNumber: animal.chipNumber ?? '',
+      cageNumber: animal.cageNumber ? String(animal.cageNumber) : '',
+      status: animal.status,
+    })
+  }
+
+  const handleEditSave = async () => {
+    if (!editingAnimal || !editForm) return
+    setEditSaving(true)
+    await fetch(`/api/competition-animals/${editingAnimal.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        animalType: editForm.animalType,
+        breed: editForm.breed || null,
+        gender: editForm.gender || null,
+        species: editForm.species,
+        color: editForm.color,
+        braceletYear: editForm.braceletYear || null,
+        braceletNumber: editForm.braceletNumber || null,
+        chipNumber: editForm.chipNumber || null,
+        cageNumber: editForm.cageNumber ? parseInt(editForm.cageNumber) : null,
+        status: editForm.status,
+      }),
+    })
+    setEditSaving(false)
+    setEditingAnimal(null)
+    setEditForm(null)
+    fetchAnimals()
+  }
+
+  const handleDelete = async (animal: Animal) => {
+    if (!confirm(`"${TYPE_LABELS[animal.animalType] || animal.animalType} — ${animal.species} / ${animal.color}" kaydını kalıcı silmek istiyor musunuz?`)) return
+    await fetch(`/api/competition-animals/${animal.id}`, { method: 'DELETE' })
+    fetchAnimals()
+  }
 
   const handleExport = async () => {
     setExporting(true)
@@ -153,6 +212,8 @@ export default function YarismaDetailPage() {
     }
     setExporting(false)
   }
+
+  const assocApprovedCount = animals.filter(a => a.status === 'assoc_approved').length
 
   return (
     <div>
@@ -177,7 +238,7 @@ export default function YarismaDetailPage() {
         ))}
       </div>
 
-      {/* Hayvan Listesi Sekmesi */}
+      {/* ── Hayvan Listesi ── */}
       {tab === 'hayvanlar' && (
         <div>
           <div className="flex flex-wrap gap-3 mb-4">
@@ -252,7 +313,7 @@ export default function YarismaDetailPage() {
                           <span className={`text-xs font-medium px-2 py-1 rounded-full ${st?.color}`}>{st?.label}</span>
                         </td>
                         <td className="px-4 py-3">
-                          <div className="flex gap-1">
+                          <div className="flex gap-1 flex-wrap">
                             {a.status === 'assoc_approved' && (
                               <button onClick={() => handleFedApprove(a.id)}
                                 className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded hover:bg-green-100">Onayla</button>
@@ -260,6 +321,14 @@ export default function YarismaDetailPage() {
                             {(a.status === 'pending' || a.status === 'assoc_approved') && (
                               <button onClick={() => handleReject(a.id)}
                                 className="text-xs bg-red-50 text-red-700 px-2 py-1 rounded hover:bg-red-100">Reddet</button>
+                            )}
+                            {canEdit && (
+                              <>
+                                <button onClick={() => openEdit(a)}
+                                  className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded hover:bg-blue-100">Düzenle</button>
+                                <button onClick={() => handleDelete(a)}
+                                  className="text-xs bg-red-50 text-red-600 px-2 py-1 rounded hover:bg-red-100">Sil</button>
+                              </>
                             )}
                           </div>
                         </td>
@@ -273,7 +342,7 @@ export default function YarismaDetailPage() {
         </div>
       )}
 
-      {/* Puan & Ödül Sekmesi */}
+      {/* ── Puan & Ödül ── */}
       {tab === 'puanlar' && (
         <div className="space-y-3">
           {animals.filter(a => a.status === 'fed_approved').length === 0 ? (
@@ -292,7 +361,6 @@ export default function YarismaDetailPage() {
                       {a.entryType === 'COLLECTION' && a.collectionGroup && (
                         <div className="text-xs text-purple-600 mt-0.5">Koleksiyon {a.collectionGroup.groupNumber}</div>
                       )}
-                      {/* Üye bilgileri */}
                       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
                         <span className="text-xs text-gray-700 flex items-center gap-1">
                           <span className="text-gray-400">👤</span>
@@ -310,51 +378,37 @@ export default function YarismaDetailPage() {
                         )}
                       </div>
                     </div>
-                    <button
-                      onClick={() => handleSaveScore(a)}
-                      disabled={saving === a.id}
-                      className="bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium px-4 py-1.5 rounded-lg disabled:opacity-50"
-                    >
+                    <button onClick={() => handleSaveScore(a)} disabled={saving === a.id}
+                      className="bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium px-4 py-1.5 rounded-lg disabled:opacity-50">
                       {saving === a.id ? 'Kaydediliyor...' : 'Kaydet'}
                     </button>
                   </div>
-
                   <div className="grid sm:grid-cols-2 gap-4 mb-4">
                     <div>
                       <label className="block text-xs font-medium text-gray-600 mb-1">Bireysel Puan</label>
-                      <input
-                        type="number"
-                        value={s.score}
+                      <input type="number" value={s.score}
                         onChange={e => setScores(prev => ({ ...prev, [a.id]: { ...prev[a.id], score: e.target.value } }))}
                         placeholder="0 - 100"
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400"
-                      />
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400" />
                     </div>
                     {a.entryType === 'COLLECTION' && (
                       <div>
                         <label className="block text-xs font-medium text-gray-600 mb-1">Grup Puanı</label>
-                        <input
-                          type="number"
-                          value={s.groupScore}
+                        <input type="number" value={s.groupScore}
                           onChange={e => setScores(prev => ({ ...prev, [a.id]: { ...prev[a.id], groupScore: e.target.value } }))}
                           placeholder="Koleksiyon grup puanı"
-                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400"
-                        />
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400" />
                       </div>
                     )}
                   </div>
-
                   <div>
                     <p className="text-xs font-medium text-gray-600 mb-2">Ödüller</p>
                     <div className="flex flex-wrap gap-2">
                       {awards.map(award => (
                         <label key={award.id} className="flex items-center gap-1.5 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={s.selectedAwards.includes(award.name)}
+                          <input type="checkbox" checked={s.selectedAwards.includes(award.name)}
                             onChange={() => toggleAward(a.id, award.name)}
-                            className="w-3.5 h-3.5 text-primary-600"
-                          />
+                            className="w-3.5 h-3.5 text-primary-600" />
                           <span className="text-xs text-gray-700">{award.name}</span>
                         </label>
                       ))}
@@ -367,7 +421,7 @@ export default function YarismaDetailPage() {
         </div>
       )}
 
-      {/* Kafes Atama Sekmesi */}
+      {/* ── Kafes Atama ── */}
       {tab === 'kafes' && (
         <div className="max-w-xl">
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -376,26 +430,18 @@ export default function YarismaDetailPage() {
               Federasyon onaylı tüm hayvanlara otomatik kafes numarası atanır.
               Sıralama: Dev Horoz/Tavuk → Cüce → Güvercin → Bıldırcın → Tavşan → Ördek → Kaz
             </p>
-
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-5 text-xs text-amber-800">
               Mevcut kafes atamaları sıfırlanacak ve yeniden atama yapılacak.
             </div>
-
-            <button
-              onClick={handleCageAssign}
-              disabled={assigning}
-              className="bg-primary-600 hover:bg-primary-700 text-white font-medium px-6 py-2.5 rounded-lg text-sm transition-colors disabled:opacity-50"
-            >
+            <button onClick={handleCageAssign} disabled={assigning}
+              className="bg-primary-600 hover:bg-primary-700 text-white font-medium px-6 py-2.5 rounded-lg text-sm transition-colors disabled:opacity-50">
               {assigning ? 'Atama Yapılıyor...' : 'Kafes Ataması Yap'}
             </button>
-
             {assignResult && (
               <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
                 {assignResult}
               </div>
             )}
-
-            {/* Mevcut atamalar */}
             {animals.filter(a => a.cageNumber !== null).length > 0 && (
               <div className="mt-6">
                 <h3 className="text-sm font-medium text-gray-700 mb-3">Mevcut Kafes Atamaları</h3>
@@ -411,11 +457,108 @@ export default function YarismaDetailPage() {
                         {a.entryType === 'COLLECTION' && a.collectionGroup && (
                           <span className="text-purple-500">Kol.{a.collectionGroup.groupNumber}</span>
                         )}
+                        {canEdit && (
+                          <button onClick={() => openEdit(a)}
+                            className="ml-auto text-xs text-blue-600 hover:underline">Düzenle</button>
+                        )}
                       </div>
                     ))}
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Düzenleme Modal ── */}
+      {editingAnimal && editForm && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <h2 className="font-semibold text-gray-800">Hayvan Bilgilerini Düzenle</h2>
+              <button onClick={() => { setEditingAnimal(null); setEditForm(null) }}
+                className="text-gray-400 hover:text-gray-600 text-xl font-bold">×</button>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Tür</label>
+                  <select value={editForm.animalType} onChange={e => setEditForm(f => f ? { ...f, animalType: e.target.value } : f)}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400">
+                    {Object.entries(TYPE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Irk</label>
+                  <select value={editForm.breed} onChange={e => setEditForm(f => f ? { ...f, breed: e.target.value } : f)}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400">
+                    <option value="">—</option>
+                    <option value="DEV">Dev</option>
+                    <option value="CUCE">Cüce</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Cinsiyet</label>
+                  <select value={editForm.gender} onChange={e => setEditForm(f => f ? { ...f, gender: e.target.value } : f)}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400">
+                    <option value="">—</option>
+                    <option value="ERKEK">Erkek</option>
+                    <option value="DISI">Dişi</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Durum</label>
+                  <select value={editForm.status} onChange={e => setEditForm(f => f ? { ...f, status: e.target.value } : f)}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400">
+                    <option value="pending">Bekliyor</option>
+                    <option value="assoc_approved">Başkan Onaylı</option>
+                    <option value="fed_approved">Fed. Onaylı</option>
+                    <option value="rejected">Reddedildi</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Cins (Irk Adı)</label>
+                <input value={editForm.species} onChange={e => setEditForm(f => f ? { ...f, species: e.target.value } : f)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Renk</label>
+                <input value={editForm.color} onChange={e => setEditForm(f => f ? { ...f, color: e.target.value } : f)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Bilezik Yılı</label>
+                  <input value={editForm.braceletYear} onChange={e => setEditForm(f => f ? { ...f, braceletYear: e.target.value } : f)}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Bilezik No</label>
+                  <input value={editForm.braceletNumber} onChange={e => setEditForm(f => f ? { ...f, braceletNumber: e.target.value } : f)}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Çip No (Tavşan)</label>
+                <input value={editForm.chipNumber} onChange={e => setEditForm(f => f ? { ...f, chipNumber: e.target.value } : f)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Kafes No</label>
+                <input type="number" value={editForm.cageNumber} onChange={e => setEditForm(f => f ? { ...f, cageNumber: e.target.value } : f)}
+                  placeholder="Manuel kafes numarası"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400" />
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
+              <button onClick={() => { setEditingAnimal(null); setEditForm(null) }}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">İptal</button>
+              <button onClick={handleEditSave} disabled={editSaving}
+                className="px-5 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg disabled:opacity-50">
+                {editSaving ? 'Kaydediliyor...' : 'Kaydet'}
+              </button>
+            </div>
           </div>
         </div>
       )}
