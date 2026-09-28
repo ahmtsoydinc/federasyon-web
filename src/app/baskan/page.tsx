@@ -43,7 +43,7 @@ const TYPE_LABELS: Record<string, string> = {
 }
 
 export default function BaskanPage() {
-  const [tab, setTab] = useState<'bilezik' | 'yarisma'>('bilezik')
+  const [tab, setTab] = useState<'bilezik' | 'yarisma' | 'uyeler'>('bilezik')
 
   // Bilezik state
   const [orders, setOrders] = useState<any[]>([])
@@ -57,6 +57,15 @@ export default function BaskanPage() {
   const [animalNotes, setAnimalNotes] = useState<Record<number, string>>({})
   const [animalProcessing, setAnimalProcessing] = useState<number | null>(null)
   const [activeCompetition, setActiveCompetition] = useState<any>(null)
+
+  // Uye yonetim state
+  const [members, setMembers] = useState<any[]>([])
+  const [membersLoading, setMembersLoading] = useState(false)
+  const [memberProcessing, setMemberProcessing] = useState<number | null>(null)
+  const [deleteModal, setDeleteModal] = useState<any | null>(null)
+  const [deleteReason, setDeleteReason] = useState('')
+  const [deleteError, setDeleteError] = useState('')
+  const [deleteProcessing, setDeleteProcessing] = useState(false)
 
   // Edit modal state
   const [editAnimal, setEditAnimal] = useState<any | null>(null)
@@ -91,10 +100,53 @@ export default function BaskanPage() {
     setAnimalsLoading(false)
   }
 
+  const fetchMembers = () => {
+    setMembersLoading(true)
+    fetch('/api/president/members')
+      .then(r => r.json())
+      .then(data => setMembers(Array.isArray(data) ? data : []))
+      .finally(() => setMembersLoading(false))
+  }
+
+  const handleApproveMember = async (id: number) => {
+    setMemberProcessing(id)
+    await fetch(`/api/president/members/${id}`, { method: 'PATCH' })
+    setMemberProcessing(null)
+    fetchMembers()
+  }
+
+  const handleDeleteMember = async () => {
+    if (!deleteModal) return
+    if (!deleteReason.trim() || deleteReason.trim().length < 3) {
+      setDeleteError('Lutfen en az 3 karakter iceren bir neden yazin.')
+      return
+    }
+    setDeleteProcessing(true)
+    setDeleteError('')
+    const res = await fetch(`/api/president/members/${deleteModal.id}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason: deleteReason }),
+    })
+    setDeleteProcessing(false)
+    if (!res.ok) {
+      const data = await res.json()
+      setDeleteError(data.error || 'Silme islemi basarisiz')
+      return
+    }
+    setDeleteModal(null)
+    setDeleteReason('')
+    fetchMembers()
+  }
+
   useEffect(() => {
     fetchOrders()
     fetchAnimals()
   }, [])
+
+  useEffect(() => {
+    if (tab === 'uyeler') fetchMembers()
+  }, [tab])
 
   const handleOrderAction = async (id: number, action: 'approve' | 'reject') => {
     setOrderProcessing(id)
@@ -227,6 +279,11 @@ export default function BaskanPage() {
           className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${tab === 'yarisma' ? 'border-primary-600 text-primary-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
           Yarışma Kayıtları
           {pendingAnimals.length > 0 && <span className="ml-2 bg-amber-500 text-white text-xs rounded-full px-1.5 py-0.5">{pendingAnimals.length}</span>}
+        </button>
+        <button onClick={() => setTab('uyeler')}
+          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${tab === 'uyeler' ? 'border-primary-600 text-primary-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+          Uyeler
+          {members.filter(m => !m.approved).length > 0 && <span className="ml-2 bg-amber-500 text-white text-xs rounded-full px-1.5 py-0.5">{members.filter(m => !m.approved).length}</span>}
         </button>
       </div>
 
@@ -434,6 +491,100 @@ export default function BaskanPage() {
                 </>
               )}
             </>
+          )}
+        </>
+      )}
+
+
+      {tab === 'uyeler' && (
+        <>
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 text-center">
+              <div className="text-2xl font-bold text-amber-600">{members.filter(m => !m.approved).length}</div>
+              <div className="text-xs text-gray-500 mt-1">Onay Bekliyor</div>
+            </div>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 text-center">
+              <div className="text-2xl font-bold text-green-600">{members.filter(m => m.approved).length}</div>
+              <div className="text-xs text-gray-500 mt-1">Onaylandı</div>
+            </div>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 text-center">
+              <div className="text-2xl font-bold text-gray-600">{members.length}</div>
+              <div className="text-xs text-gray-500 mt-1">Toplam</div>
+            </div>
+          </div>
+          {membersLoading ? (
+            <div className="text-center py-12 text-gray-400">Yukleniyor...</div>
+          ) : (
+            <>
+              {members.filter(m => !m.approved).length > 0 && (
+                <div className="mb-8">
+                  <h2 className="text-lg font-semibold text-gray-700 mb-4">Onay Bekleyen Uyeler ({members.filter(m => !m.approved).length})</h2>
+                  <div className="space-y-3">
+                    {members.filter(m => !m.approved).map(m => (
+                      <div key={m.id} className="bg-white rounded-xl shadow-sm border-2 border-amber-100 p-4">
+                        <div className="font-bold text-gray-800">{m.name}</div>
+                        <div className="text-sm text-gray-500">{m.email}{m.phone ? ` - ${m.phone}` : ''}</div>
+                        <div className="text-xs text-gray-400 mt-1">{new Date(m.createdAt).toLocaleDateString('tr-TR')} tarihinde basvurdu</div>
+                        <div className="flex gap-2 mt-3">
+                          <button onClick={() => handleApproveMember(m.id)} disabled={memberProcessing === m.id}
+                            className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-lg text-sm disabled:opacity-60 transition-colors">
+                            {memberProcessing === m.id ? '...' : 'Onayla'}
+                          </button>
+                          <button onClick={() => { setDeleteModal(m); setDeleteReason(''); setDeleteError('') }} disabled={memberProcessing === m.id}
+                            className="flex-1 bg-red-50 hover:bg-red-100 text-red-700 font-semibold py-2 rounded-lg text-sm border border-red-200 disabled:opacity-60 transition-colors">
+                            Sil
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {members.filter(m => m.approved).length > 0 && (
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-700 mb-4">Onaylanmis Uyeler</h2>
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 divide-y divide-gray-50">
+                    {members.filter(m => m.approved).map(m => (
+                      <div key={m.id} className="px-4 py-3 flex items-center justify-between gap-3">
+                        <div>
+                          <span className="font-medium text-gray-800">{m.name}</span>
+                          <span className="text-gray-400 text-sm ml-2">{m.email}</span>
+                        </div>
+                        <button onClick={() => { setDeleteModal(m); setDeleteReason(''); setDeleteError('') }}
+                          className="text-red-500 hover:text-red-700 text-xs font-medium px-2 py-1 rounded hover:bg-red-50 transition-colors">
+                          Sil
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {members.length === 0 && (
+                <div className="text-center py-16 text-gray-400">
+                  <p>Henuz kayitli uye bulunmuyor.</p>
+                </div>
+              )}
+            </>
+          )}
+          {deleteModal && (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6">
+                <h3 className="font-bold text-gray-800 text-lg mb-2">Uyeyi Sil</h3>
+                <p className="text-sm text-gray-500 mb-4"><strong>{deleteModal.name}</strong> adli uyeyi silmek istiyorsunuz.</p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Silme nedeni *</label>
+                <textarea value={deleteReason} onChange={e => setDeleteReason(e.target.value)}
+                  placeholder="Neden siliyorsunuz? (en az 3 karakter)" rows={3}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-red-400 resize-none mb-3" />
+                {deleteError && <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm text-red-600 mb-3">{deleteError}</div>}
+                <div className="flex gap-3">
+                  <button onClick={handleDeleteMember} disabled={deleteProcessing}
+                    className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 rounded-xl text-sm disabled:opacity-60">
+                    {deleteProcessing ? 'Siliniyor...' : 'Sil'}
+                  </button>
+                  <button onClick={() => setDeleteModal(null)} className="px-5 text-gray-600 text-sm py-2.5">Iptal</button>
+                </div>
+              </div>
+            </div>
           )}
         </>
       )}

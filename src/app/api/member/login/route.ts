@@ -13,6 +13,8 @@ export async function POST(req: NextRequest) {
   const valid = await bcrypt.compare(password, member.password)
   if (!valid) return NextResponse.json({ error: 'Geçersiz kimlik bilgileri' }, { status: 401 })
 
+  if (!member.approved) return NextResponse.json({ error: 'Hesabınız henüz başkan tarafından onaylanmamış. Lütfen başkanınızla iletişime geçin.' }, { status: 403 })
+
   if (!member.active) return NextResponse.json({ error: 'Hesabınız pasif durumda' }, { status: 403 })
 
   const token = signMemberToken({ id: member.id, email: member.email, name: member.name, associationId: member.associationId })

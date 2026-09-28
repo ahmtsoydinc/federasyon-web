@@ -2,14 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 
 export default function UyeOlPage() {
   const [form, setForm] = useState({ name: '', email: '', password: '', password2: '', phone: '', associationId: '' })
   const [associations, setAssociations] = useState<{ id: number; name: string; city?: string }[]>([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
+  const [registered, setRegistered] = useState(false)
 
   useEffect(() => {
     fetch('/api/associations').then(r => r.json()).then(setAssociations)
@@ -31,16 +30,40 @@ export default function UyeOlPage() {
     const data = await res.json()
     setLoading(false)
     if (!res.ok) { setError(data.error || 'Kayıt başarısız'); return }
-    router.push('/uye/dashboard')
+    setRegistered(true)
+  }
+
+  if (registered) {
+    return (
+      <div className="min-h-[80vh] bg-gray-50 flex items-center justify-center px-4 py-12">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 w-full max-w-md p-8 text-center">
+          <div className="text-5xl mb-4">✅</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Başvurunuz Alındı!</h2>
+          <p className="text-gray-500 text-sm mb-4">
+            Kayıt başvurunuz dernek başkanınıza iletildi. Başkanınız onayladıktan sonra sisteme giriş yapabilirsiniz.
+          </p>
+          <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-700 mb-6">
+            ⏳ Onay bekleniyor — başkanınızla iletişime geçebilirsiniz.
+          </div>
+          <Link href="/uye-girisi" className="inline-block bg-primary-600 hover:bg-primary-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors text-sm">
+            Giriş Sayfasına Dön
+          </Link>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="min-h-[80vh] bg-gray-50 flex items-center justify-center px-4 py-12">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 w-full max-w-md p-8">
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <div className="w-14 h-14 bg-primary-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mx-auto mb-3">🐓</div>
           <h1 className="text-2xl font-bold text-gray-800">Üye Kaydı</h1>
           <p className="text-sm text-gray-500 mt-1">TSHF üye portalına kayıt olun</p>
+        </div>
+
+        <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-700 mb-5">
+          ℹ️ Kayıt başvurunuz dernek başkanınız tarafından onaylandıktan sonra aktif olacaktır.
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -64,9 +87,6 @@ export default function UyeOlPage() {
                 <option key={a.id} value={a.id}>{a.name}{a.city ? ` (${a.city})` : ''}</option>
               ))}
             </select>
-            {associations.length === 0 && (
-              <p className="text-xs text-amber-600 mt-1">Henüz dernek tanımlanmamış. Lütfen yöneticiyle iletişime geçin.</p>
-            )}
           </div>
 
           <div>
@@ -111,7 +131,7 @@ export default function UyeOlPage() {
             type="submit" disabled={loading}
             className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-60"
           >
-            {loading ? 'Kayıt yapılıyor...' : 'Üye Ol'}
+            {loading ? 'Gönderiliyor...' : 'Başvur'}
           </button>
         </form>
 

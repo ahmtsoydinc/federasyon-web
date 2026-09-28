@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
-import { signMemberToken } from '@/lib/memberAuth'
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,23 +17,19 @@ export async function POST(req: NextRequest) {
     if (exists) return NextResponse.json({ error: 'Bu e-posta zaten kayıtlı' }, { status: 409 })
 
     const hashed = await bcrypt.hash(password, 10)
-    const member = await prisma.member.create({
-      data: { name, email, password: hashed, phone: phone || null, associationId: Number(associationId) },
-      include: { association: true },
+    await prisma.member.create({
+      data: {
+        name, email, password: hashed,
+        phone: phone || null,
+        associationId: Number(associationId),
+        approved: false,
+      },
     })
 
-    const token = signMemberToken({ id: member.id, email: member.email, name: member.name, associationId: member.associationId })
-
-    const res = NextResponse.json({
-      member: { id: member.id, name: member.name, email: member.email, association: assoc.name }
-    }, { status: 201 })
-
-    res.cookies.set('member_token', token, {
-      httpOnly: true, secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax', maxAge: 60 * 60 * 24 * 7, path: '/',
-    })
-
-    return res
+    return NextResponse.json(
+      { pending: true, message: 'Başvurunuz alındı. Dernek başkanınız onayladıktan sonra giriş yapabilirsiniz.' },
+      { status: 201 }
+    )
   } catch (e) {
     console.error(e)
     return NextResponse.json({ error: 'Sunucu hatası' }, { status: 500 })
