@@ -39,7 +39,7 @@ export default async function HaberDetayPage({ params }: { params: { slug: strin
       </div>
 
       {post.imageUrl && (
-        <img src={post.imageUrl} alt={post.title} className="w-full h-48 sm:h-72 object-cover rounded-xl mb-8" />
+        <img src={post.imageUrl} alt={post.title} className="w-full rounded-xl mb-8" />
       )}
 
       <div className="prose prose-green max-w-none text-gray-700 leading-relaxed whitespace-pre-wrap">

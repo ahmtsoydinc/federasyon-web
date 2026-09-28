@@ -20,7 +20,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     return NextResponse.json({ error: 'Yetkisiz' }, { status: 403 })
   }
 
-  const { name, location, registrationStart, registrationEnd, eventDate, isActive } = await req.json()
+  const { name, location, registrationStart, registrationEnd, eventDate, isActive, regulationDocumentId } = await req.json()
   const id = parseInt(params.id)
 
   if (isActive) {
@@ -36,6 +36,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       ...(registrationEnd && { registrationEnd: new Date(registrationEnd) }),
       eventDate: eventDate ? new Date(eventDate) : null,
       ...(isActive !== undefined && { isActive }),
+      ...(regulationDocumentId !== undefined && { regulationDocumentId: regulationDocumentId ? Number(regulationDocumentId) : null }),
     },
   })
   return NextResponse.json(competition)

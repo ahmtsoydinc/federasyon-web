@@ -66,6 +66,8 @@ export default function YarismaKayitPage() {
   const [editId, setEditId] = useState<number | null>(null)
   const [submitAllLoading, setSubmitAllLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [showRegulationModal, setShowRegulationModal] = useState(false)
+  const [regulationAccepted, setRegulationAccepted] = useState(false)
   const [lockedSpecies, setLockedSpecies] = useState<string | null>(null)
   const [lockedColor, setLockedColor] = useState<string | null>(null)
 
@@ -202,10 +204,7 @@ export default function YarismaKayitPage() {
     fetchData()
   }
 
-  const handleSubmitAll = async () => {
-    const pending = animals.filter(a => a.status === 'pending')
-    if (pending.length === 0) return
-    if (!confirm(`${pending.length} hayvanı başkanın onayına göndermek istiyor musunuz? Gönderdikten sonra düzenleme yapılamaz.`)) return
+  const doSubmitAll = async () => {
     setSubmitAllLoading(true)
     await fetch('/api/competition-animals/submit', {
       method: 'POST',
@@ -214,7 +213,20 @@ export default function YarismaKayitPage() {
     })
     setSubmitAllLoading(false)
     setSubmitted(true)
+    setShowRegulationModal(false)
     fetchData()
+  }
+
+  const handleSubmitAll = async () => {
+    const pending = animals.filter(a => a.status === 'pending')
+    if (pending.length === 0) return
+    if (competition?.regulationDocument) {
+      setRegulationAccepted(false)
+      setShowRegulationModal(true)
+      return
+    }
+    if (!confirm(`${pending.length} hayvanı başkanın onayına göndermek istiyor musunuz? Gönderdikten sonra düzenleme yapılamaz.`)) return
+    await doSubmitAll()
   }
 
   const setF = (key: keyof FormData, value: string) => setForm(f => ({ ...f, [key]: value }))
@@ -660,6 +672,54 @@ export default function YarismaKayitPage() {
                 className="px-5 text-gray-600 hover:text-gray-800 text-sm py-2.5">
                 İptal
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sergi Yönetmeliği Onay Modalı */}
+      {showRegulationModal && competition?.regulationDocument && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl flex flex-col" style={{maxHeight: '90vh'}}>
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+              <h2 className="font-bold text-gray-800 text-lg">Sergi Yönetmeliği</h2>
+              <button onClick={() => setShowRegulationModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">×</button>
+            </div>
+            <div className="flex-1 overflow-hidden p-4" style={{minHeight: '400px'}}>
+              <iframe
+                src={competition.regulationDocument.fileUrl}
+                className="w-full h-full rounded-lg border border-gray-200"
+                style={{minHeight: '380px'}}
+                title="Sergi Yönetmeliği"
+              />
+            </div>
+            <div className="px-6 py-4 border-t border-gray-100 space-y-4">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={regulationAccepted}
+                  onChange={e => setRegulationAccepted(e.target.checked)}
+                  className="w-5 h-5 mt-0.5 text-primary-600 rounded flex-shrink-0"
+                />
+                <span className="text-sm text-gray-700 font-medium">
+                  Okudum Anladım. Kabul ediyorum.
+                </span>
+              </label>
+              <div className="flex gap-3">
+                <button
+                  onClick={doSubmitAll}
+                  disabled={!regulationAccepted || submitAllLoading}
+                  className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 rounded-xl text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {submitAllLoading ? 'Gönderiliyor...' : 'Onayla ve Başkana Gönder'}
+                </button>
+                <button
+                  onClick={() => setShowRegulationModal(false)}
+                  className="px-5 text-gray-600 hover:text-gray-800 text-sm"
+                >
+                  İptal
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -12,15 +12,23 @@ interface Competition {
   eventDate: string | null
   isActive: boolean
   _count: { animals: number }
+  regulationDocumentId?: number | null
+}
+
+interface DocOption {
+  id: number
+  title: string
 }
 
 type FormState = {
   name: string; location: string; registrationStart: string
   registrationEnd: string; eventDate: string; isActive: boolean
+  regulationDocumentId: number | null
 }
 
 const EMPTY_FORM: FormState = {
   name: '', location: '', registrationStart: '', registrationEnd: '', eventDate: '', isActive: true,
+  regulationDocumentId: null,
 }
 
 function toLocalDT(iso: string) {
@@ -37,6 +45,11 @@ export default function YarismalarPage() {
   const [saving, setSaving] = useState(false)
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const [deleting, setDeleting] = useState<number | null>(null)
+  const [docs, setDocs] = useState<DocOption[]>([])
+
+  const loadDocuments = () => {
+    fetch('/api/documents').then(r => r.json()).then(d => setDocs(Array.isArray(d) ? d : []))
+  }
 
   const fetchAll = () => {
     setLoading(true)
@@ -52,6 +65,7 @@ export default function YarismalarPage() {
       .then(r => r.json())
       .then(d => { if (d.user?.role === 'superadmin') setIsSuperAdmin(true) })
       .catch(() => {})
+    loadDocuments()
   }, [])
 
   const openCreate = () => {
@@ -69,6 +83,7 @@ export default function YarismalarPage() {
       registrationEnd: toLocalDT(c.registrationEnd),
       eventDate: c.eventDate ? c.eventDate.slice(0, 10) : '',
       isActive: c.isActive,
+      regulationDocumentId: c.regulationDocumentId ?? null,
     })
     setShowModal(true)
   }
@@ -233,6 +248,20 @@ export default function YarismalarPage() {
                 <input type="date" value={form.eventDate}
                   onChange={e => setForm({ ...form, eventDate: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400" />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Sergi Yönetmeliği Belgesi</label>
+                <select
+                  value={form.regulationDocumentId ?? ""}
+                  onChange={e => setForm({ ...form, regulationDocumentId: e.target.value ? Number(e.target.value) : null })}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400"
+                >
+                  <option value="">— Yönetmelik seçin —</option>
+                  {docs.map(d => (
+                    <option key={d.id} value={d.id}>{d.title}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="flex items-center gap-2 pt-1">

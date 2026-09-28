@@ -52,11 +52,12 @@ model Page {
 }
 
 model Document {
-  id        Int      @id @default(autoincrement())
-  title     String
-  fileUrl   String
-  category  String?
-  createdAt DateTime @default(now())
+  id           Int           @id @default(autoincrement())
+  title        String
+  fileUrl      String
+  category     String?
+  createdAt    DateTime      @default(now())
+  competitions Competition[]
 }
 
 model BoardMember {
@@ -190,9 +191,11 @@ model Competition {
   registrationEnd   DateTime
   eventDate         DateTime?
   isActive          Boolean            @default(true)
-  animals           CompetitionAnimal[]
-  collectionGroups  CollectionGroup[]
-  createdAt         DateTime           @default(now())
+  animals               CompetitionAnimal[]
+  collectionGroups      CollectionGroup[]
+  regulationDocumentId  Int?
+  regulationDocument    Document?          @relation(fields: [regulationDocumentId], references: [id])
+  createdAt             DateTime           @default(now())
 }
 
 model CollectionGroup {

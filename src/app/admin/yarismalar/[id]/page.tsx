@@ -117,6 +117,24 @@ export default function YarismaDetailPage() {
     fetchAnimals()
   }
 
+  const handleCageSwap = async (animal: any, newCage: number) => {
+    if (!newCage || newCage === animal.cageNumber) return
+    const target = animals.find((a: any) => a.cageNumber === newCage)
+    await fetch(`/api/competition-animals/${animal.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cageNumber: newCage }),
+    })
+    if (target && target.id !== animal.id) {
+      await fetch(`/api/competition-animals/${target.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cageNumber: animal.cageNumber }),
+      })
+    }
+    fetchAnimals()
+  }
+
   const handleSaveScore = async (animal: Animal) => {
     setSaving(animal.id)
     const s = scores[animal.id]
@@ -451,7 +469,7 @@ export default function YarismaDetailPage() {
                     .sort((a, b) => (a.cageNumber ?? 0) - (b.cageNumber ?? 0))
                     .map(a => (
                       <div key={a.id} className="flex items-center gap-3 text-xs py-1 border-b border-gray-50">
-                        <span className="font-mono font-bold w-8 text-gray-700">{a.cageNumber}</span>
+                        <input type="number" defaultValue={a.cageNumber ?? ''} onBlur={e => { const v = parseInt(e.target.value); if (v && v !== a.cageNumber) handleCageSwap(a, v) }} className="font-mono font-bold w-14 text-center text-gray-700 border border-gray-300 rounded px-1 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary-400" />
                         <span className="text-gray-600">{TYPE_LABELS[a.animalType]} {a.breed === 'DEV' ? '(Dev)' : a.breed === 'CUCE' ? '(C)' : ''}</span>
                         <span className="text-gray-400">{a.species} / {a.color}</span>
                         {a.entryType === 'COLLECTION' && a.collectionGroup && (

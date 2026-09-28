@@ -7,6 +7,7 @@ export async function GET() {
   const competition = await prisma.competition.findFirst({
     where: { isActive: true },
     orderBy: { createdAt: 'desc' },
+    include: { regulationDocument: { select: { id: true, title: true, fileUrl: true } } },
   })
   if (!competition) return NextResponse.json({ competition: null })
 

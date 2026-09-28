@@ -183,11 +183,11 @@ export default async function HomePage() {
                   <Link key={post.id} href={`/haberler/${post.slug}`}>
                     <article className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all group">
                       {post.imageUrl ? (
-                        <div className="h-44 overflow-hidden">
+                        <div className="aspect-video bg-gray-100 overflow-hidden">
                           <img
                             src={post.imageUrl}
                             alt={post.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                           />
                         </div>
                       ) : (
