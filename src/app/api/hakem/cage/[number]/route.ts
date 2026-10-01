@@ -10,7 +10,7 @@ export async function GET(req: NextRequest, { params }: { params: { number: stri
   if (isNaN(cageNumber)) return NextResponse.json({ error: 'Geçersiz kafes numarası' }, { status: 400 })
 
   const animal = await prisma.competitionAnimal.findFirst({
-    where: { cageNumber, status: 'fed_approved' },
+    where: { cageNumber, status: 'fed_approved', competition: { isActive: true } },
     select: {
       id: true,
       animalType: true,
@@ -42,7 +42,7 @@ export async function PUT(req: NextRequest, { params }: { params: { number: stri
   if (isNaN(cageNumber)) return NextResponse.json({ error: 'Geçersiz kafes numarası' }, { status: 400 })
 
   const animal = await prisma.competitionAnimal.findFirst({
-    where: { cageNumber, status: 'fed_approved' },
+    where: { cageNumber, status: 'fed_approved', competition: { isActive: true } },
   })
   if (!animal) return NextResponse.json({ error: 'Kafes bulunamadı' }, { status: 404 })
 
