@@ -115,6 +115,7 @@ model Member {
   association   Association @relation(fields: [associationId], references: [id])
   active        Boolean  @default(true)
   approved      Boolean  @default(false)
+  kvkkApproved  Boolean  @default(false)
   createdAt     DateTime @default(now())
   orders        BraceletOrder[]
   messages      MemberMessage[]
