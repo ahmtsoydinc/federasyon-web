@@ -12,6 +12,7 @@ export async function GET(req: NextRequest) {
     const competitionId = searchParams.get('competitionId')
     const status = searchParams.get('status')
     const search = searchParams.get('search')
+    const braceletSearch = search && search.includes('/') ? search.split('/').pop()! : search
 
     const animals = await prisma.competitionAnimal.findMany({
       where: {
@@ -22,6 +23,10 @@ export async function GET(req: NextRequest) {
             { member: { name: { contains: search } } },
             { member: { association: { name: { contains: search } } } },
             { species: { contains: search } },
+            { breed: { contains: search } },
+            { color: { contains: search } },
+            { chipNumber: { contains: search } },
+            { braceletNumber: { contains: braceletSearch || '' } },
           ],
         }),
       },

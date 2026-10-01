@@ -39,3 +39,4 @@ upload-*.js
 insert-*.mjs
 check-*.js
 check-*.mjs
+public/uploads/

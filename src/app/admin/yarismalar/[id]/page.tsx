@@ -260,7 +260,7 @@ export default function YarismaDetailPage() {
       {tab === 'hayvanlar' && (
         <div>
           <div className="flex flex-wrap gap-3 mb-4">
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Dernek veya üye ara..."
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Üye, dernek, ırk, renk veya kimlik ara..."
               className="px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400 w-56" />
             <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
               className="px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400">
@@ -441,7 +441,7 @@ export default function YarismaDetailPage() {
 
       {/* ── Kafes Atama ── */}
       {tab === 'kafes' && (
-        <div className="max-w-xl">
+        <div className="w-full">
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h2 className="font-semibold text-gray-700 mb-2">Kafes Ataması</h2>
             <p className="text-sm text-gray-500 mb-4">
