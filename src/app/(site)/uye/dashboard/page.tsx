@@ -132,8 +132,6 @@ export default function UyeDashboard() {
           )}
         </div>
       </div>
-    </div>
-
       {showKvkkModal && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl flex flex-col" style={{ maxHeight: '90vh' }}>
@@ -160,12 +158,14 @@ export default function UyeDashboard() {
                 }}
                 className="flex-1 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl text-sm"
               >
-                {kvkkLoading ? 'İşleniyor...' : 'Okudum, Onaylıyorum'}
+                {kvkkLoading ? 'İşleniyor...' : 'Okudum, Onaylayalım'}
               </button>
               <button onClick={() => setShowKvkkModal(false)} className="px-5 text-gray-600 text-sm">Kapat</button>
             </div>
           </div>
         </div>
       )}
+
+    </div>
   )
 }

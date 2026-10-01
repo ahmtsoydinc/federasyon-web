@@ -9,6 +9,7 @@ interface Member {
   phone: string | null
   active: boolean
   approved: boolean
+  kvkkApproved: boolean
   createdAt: string
   association: { name: string }
 }
@@ -111,6 +112,7 @@ export default function UyelerPage() {
                   <th className="text-left px-4 py-3 font-medium text-gray-600 hidden lg:table-cell">Telefon</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-600">Dernek</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-600 hidden md:table-cell">Kayıt</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600 hidden lg:table-cell">KVKK</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-600">Onay</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-600">Durum</th>
                   <th className="text-right px-4 py-3 font-medium text-gray-600">İşlem</th>
@@ -125,6 +127,13 @@ export default function UyelerPage() {
                     <td className="px-4 py-3 text-gray-600 text-xs">{m.association.name}</td>
                     <td className="px-4 py-3 text-gray-400 hidden md:table-cell text-xs">
                       {new Date(m.createdAt).toLocaleDateString('tr-TR')}
+                    </td>
+                    <td className="px-4 py-3 hidden lg:table-cell">
+                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                        m.kvkkApproved ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                      }`}>
+                        {m.kvkkApproved ? '✓ Onaylı' : '—'}
+                      </span>
                     </td>
                     <td className="px-4 py-3">
                       <button

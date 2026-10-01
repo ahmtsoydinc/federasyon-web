@@ -8,8 +8,7 @@ export async function GET(req: NextRequest) {
 
   const members = await prisma.member.findMany({
     orderBy: { createdAt: 'desc' },
-    include: { association: { select: { name: true } } },
-    omit: { password: true } as any,
+    select: { id: true, name: true, email: true, phone: true, active: true, approved: true, kvkkApproved: true, createdAt: true, association: { select: { name: true } } },
   })
   return NextResponse.json(members)
 }

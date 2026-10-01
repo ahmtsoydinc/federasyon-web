@@ -24,7 +24,7 @@ export default function UyeLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     fetch('/api/member/me')
       .then(r => r.json())
-      .then(d => { if (d.member) setMember(d.member); else router.push('/uye-girisi') })
+      .then(d => { const m = d.member ?? d; if (m?.id) setMember(m); else router.push('/uye-girisi') })
       .catch(() => router.push('/uye-girisi'))
       .finally(() => setLoading(false))
 
