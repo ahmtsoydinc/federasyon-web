@@ -78,6 +78,39 @@ export default function HayvanStandartlariPage() {
     if (tab === 'liste') fetchList()
   }, [tab, fetchList])
 
+  // --- Düzenle ---
+  const [editingRecord, setEditingRecord] = useState<Standard | null>(null)
+  const [editForm, setEditForm] = useState({ animalType: 'TAVUK', breed: '', species: '', color: '' })
+  const [editSaving, setEditSaving] = useState(false)
+  const [editError, setEditError] = useState<string | null>(null)
+
+  const handleEditOpen = (r: Standard) => {
+    setEditingRecord(r)
+    setEditForm({ animalType: r.animalType, breed: r.breed ?? '', species: r.species, color: r.color })
+    setEditError(null)
+  }
+
+  const handleUpdate = async () => {
+    if (!editingRecord) return
+    setEditSaving(true)
+    setEditError(null)
+    try {
+      const res = await fetch(`/api/animal-standards?id=${editingRecord.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm),
+      })
+      const data = await res.json()
+      if (!res.ok) { setEditError(data.error || 'Hata oluştu'); return }
+      setEditingRecord(null)
+      fetchList()
+    } catch (e: any) {
+      setEditError(e?.message ?? 'Ağ hatası')
+    } finally {
+      setEditSaving(false)
+    }
+  }
+
   const handleDelete = async (id: number) => {
     if (!confirm('Bu kaydı silmek istediğinizden emin misiniz?')) return
     await fetch(`/api/animal-standards?id=${id}`, { method: 'DELETE' })
@@ -240,7 +273,13 @@ export default function HayvanStandartlariPage() {
                         <td className="py-1.5 pr-3 text-gray-500">{r.breed ?? '—'}</td>
                         <td className="py-1.5 pr-3 text-gray-700">{r.species}</td>
                         <td className="py-1.5 pr-3 text-gray-600">{r.color}</td>
-                        <td className="py-1.5 text-right">
+                        <td className="py-1.5 text-right space-x-1">
+                          <button
+                            onClick={() => handleEditOpen(r)}
+                            className="text-xs text-blue-500 hover:text-blue-700 px-2 py-0.5 rounded hover:bg-blue-50 transition-colors"
+                          >
+                            Düzenle
+                          </button>
                           <button
                             onClick={() => handleDelete(r.id)}
                             className="text-xs text-red-500 hover:text-red-700 px-2 py-0.5 rounded hover:bg-red-50 transition-colors"
@@ -353,6 +392,54 @@ export default function HayvanStandartlariPage() {
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── DÜZENLE MODAL ── */}
+      {editingRecord && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
+            <h2 className="text-lg font-semibold text-gray-800">Kaydı Düzenle</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Hayvan Türü *</label>
+                <select value={editForm.animalType} onChange={e => setEditForm(f => ({ ...f, animalType: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400">
+                  {ANIMAL_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Irk</label>
+                <select value={editForm.breed} onChange={e => setEditForm(f => ({ ...f, breed: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400">
+                  <option value="">— Yok —</option>
+                  <option value="DEV">DEV</option>
+                  <option value="CUCE">CUCE</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Cins *</label>
+              <input value={editForm.species} onChange={e => setEditForm(f => ({ ...f, species: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Renk *</label>
+              <input value={editForm.color} onChange={e => setEditForm(f => ({ ...f, color: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400" />
+            </div>
+            {editError && <p className="text-sm text-red-600">{editError}</p>}
+            <div className="flex gap-3 pt-2">
+              <button onClick={handleUpdate} disabled={editSaving || !editForm.species.trim() || !editForm.color.trim()}
+                className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 rounded-lg text-sm transition-colors disabled:opacity-50">
+                {editSaving ? 'Kaydediliyor...' : '✓ Kaydet'}
+              </button>
+              <button onClick={() => setEditingRecord(null)}
+                className="flex-1 border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium py-2 rounded-lg text-sm transition-colors">
+                İptal
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

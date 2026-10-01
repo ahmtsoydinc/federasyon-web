@@ -93,3 +93,28 @@ export async function DELETE(req: NextRequest) {
   await prisma.animalStandard.delete({ where: { id } })
   return NextResponse.json({ ok: true })
 }
+
+export async function PUT(req: NextRequest) {
+  const { searchParams } = new URL(req.url)
+  const id = parseInt(searchParams.get('id') || '')
+  if (!id) return NextResponse.json({ error: 'id gerekli' }, { status: 400 })
+
+  const body = await req.json()
+  const { animalType, breed, species, color } = body
+
+  if (!animalType || !species || !color) {
+    return NextResponse.json({ error: 'animalType, species ve color zorunludur.' }, { status: 400 })
+  }
+
+  const record = await prisma.animalStandard.update({
+    where: { id },
+    data: {
+      animalType: animalType.trim().toUpperCase(),
+      breed: breed ? breed.trim().toUpperCase() || null : null,
+      species: species.trim(),
+      color: color.trim(),
+    },
+  })
+
+  return NextResponse.json(record)
+}
