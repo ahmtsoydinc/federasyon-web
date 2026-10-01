@@ -7,9 +7,16 @@ export default function UyeDashboard() {
   const [member, setMember] = useState<any>(null)
   const [orders, setOrders] = useState<any[]>([])
   const [messages, setMessages] = useState<any[]>([])
+  const [kvkkDoc, setKvkkDoc] = useState<any>(null)
+  const [showKvkkModal, setShowKvkkModal] = useState(false)
+  const [kvkkLoading, setKvkkLoading] = useState(false)
 
   useEffect(() => {
-    fetch('/api/member/me').then(r => r.json()).then(d => setMember(d.member))
+    fetch('/api/member/me').then(r => r.json()).then(d => setMember(d.member ?? d))
+    fetch('/api/documents').then(r => r.json()).then((docs: any[]) => {
+      const kvkk = docs.find((d: any) => d.title.toLowerCase().includes('kvkk'))
+      if (kvkk) setKvkkDoc(kvkk)
+    }).catch(() => {})
     fetch('/api/bracelet/orders').then(r => r.json()).then(setOrders).catch(() => {})
     fetch('/api/messages').then(r => r.json()).then(setMessages).catch(() => {})
   }, [])
@@ -29,6 +36,34 @@ export default function UyeDashboard() {
     <div>
       <h1 className="text-2xl font-bold text-gray-800 mb-2">Hoş Geldiniz{member ? `, ${member.name}` : ''}!</h1>
       <p className="text-gray-500 mb-8">Üye portalına hoş geldiniz.</p>
+
+
+      {/* KVKK Durumu */}
+      {member && !member.kvkkApproved && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-amber-600">⚠️</span>
+                <span className="text-sm font-semibold text-amber-800">KVKK Aydınlatma ve Rıza Metni Onaylanmadı</span>
+              </div>
+              <p className="text-xs text-amber-700">Onaylanmaması durumunda yarışma kayıtlarında sadece isminiz ve dernek adınız görünecek, telefon ve e-posta bilgileriniz paylaşılmayacaktır.</p>
+            </div>
+            <button
+              onClick={() => setShowKvkkModal(true)}
+              className="flex-shrink-0 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors"
+            >
+              Onayla
+            </button>
+          </div>
+        </div>
+      )}
+      {member && member.kvkkApproved && (
+        <div className="bg-green-50 border border-green-200 rounded-xl p-3 mb-6 flex items-center gap-2">
+          <span className="text-green-600">✅</span>
+          <span className="text-sm text-green-700 font-medium">KVKK Aydınlatma ve Rıza Metni onaylandı</span>
+        </div>
+      )}
 
       {/* Özet kartlar */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
@@ -98,5 +133,39 @@ export default function UyeDashboard() {
         </div>
       </div>
     </div>
+
+      {showKvkkModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl flex flex-col" style={{ maxHeight: '90vh' }}>
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+              <h2 className="font-bold text-gray-800 text-lg">KVKK Aydınlatma ve Rıza Metni</h2>
+              <button onClick={() => setShowKvkkModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl">×</button>
+            </div>
+            <div className="flex-1 overflow-hidden p-4" style={{ minHeight: '400px' }}>
+              {kvkkDoc ? (
+                <iframe src={kvkkDoc.fileUrl} className="w-full h-full rounded-lg border border-gray-200" style={{ minHeight: '380px' }} title="KVKK" />
+              ) : (
+                <p className="text-sm text-gray-500 text-center py-8">Belge yükleniyor...</p>
+              )}
+            </div>
+            <div className="px-6 py-4 border-t border-gray-100 flex gap-3">
+              <button
+                disabled={kvkkLoading}
+                onClick={async () => {
+                  setKvkkLoading(true)
+                  await fetch('/api/member/kvkk-approve', { method: 'POST' })
+                  setMember((m: any) => ({ ...m, kvkkApproved: true }))
+                  setShowKvkkModal(false)
+                  setKvkkLoading(false)
+                }}
+                className="flex-1 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl text-sm"
+              >
+                {kvkkLoading ? 'İşleniyor...' : 'Okudum, Onaylıyorum'}
+              </button>
+              <button onClick={() => setShowKvkkModal(false)} className="px-5 text-gray-600 text-sm">Kapat</button>
+            </div>
+          </div>
+        </div>
+      )}
   )
 }
