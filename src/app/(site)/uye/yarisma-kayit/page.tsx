@@ -70,16 +70,19 @@ export default function YarismaKayitPage() {
   const [regulationAccepted, setRegulationAccepted] = useState(false)
   const [lockedSpecies, setLockedSpecies] = useState<string | null>(null)
   const [lockedColor, setLockedColor] = useState<string | null>(null)
+  const [memberKvkk, setMemberKvkk] = useState<boolean | null>(null)
 
   const fetchData = useCallback(async () => {
-    const [compRes, animRes, grpRes] = await Promise.all([
+    const [compRes, animRes, grpRes, meRes] = await Promise.all([
       fetch('/api/competitions/active'),
       fetch('/api/competition-animals'),
       fetch('/api/collection-groups'),
+      fetch('/api/member/me'),
     ])
     const compData = await compRes.json()
     const animData = await animRes.json()
     const grpData = await grpRes.json()
+    const meData = meRes.ok ? await meRes.json() : null
 
     setCompetition(compData.competition)
     setRegistrationOpen(compData.registrationOpen ?? false)
@@ -87,6 +90,7 @@ export default function YarismaKayitPage() {
       setAnimals(Array.isArray(animData) ? animData.filter((a: any) => a.competitionId === compData.competition.id) : [])
       setGroups(Array.isArray(grpData) ? grpData.filter((g: any) => g.competitionId === compData.competition.id) : [])
     }
+    if (meData) setMemberKvkk(meData.kvkkApproved ?? false)
     setLoading(false)
   }, [])
 
@@ -341,6 +345,27 @@ export default function YarismaKayitPage() {
           + Hayvan Ekle
         </button>
       </div>
+
+
+      {/* KVKK Durumu */}
+      {memberKvkk !== null && (
+        memberKvkk ? (
+          <div className="bg-green-50 border border-green-200 rounded-xl p-3 mb-4 flex items-center gap-2">
+            <span className="text-green-600 text-base">✅</span>
+            <span className="text-sm text-green-700 font-medium">KVKK Aydınlatma ve Rıza Metni: Onaylı</span>
+          </div>
+        ) : (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-amber-600 text-base">⚠️</span>
+              <span className="text-sm text-amber-800 font-semibold">KVKK Aydınlatma ve Rıza Metni: Onaysız</span>
+            </div>
+            <p className="text-xs text-amber-700">
+              KVKK Aydınlatma ve Rıza Metni onaylanmaması durumunda Sadece İsminiz Soyisminiz ve Dernek Adınız olacak ve Diğer Bilgileriniz BULUNMAYACAKTIR.
+            </p>
+          </div>
+        )
+      )}
 
       {submitted && (
         <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-5 text-green-700 text-sm">

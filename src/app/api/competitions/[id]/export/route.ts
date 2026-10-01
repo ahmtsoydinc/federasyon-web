@@ -18,7 +18,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const animals = await (prisma as any).competitionAnimal.findMany({
     where: { competitionId },
     include: {
-      member: { include: { association: true } },
+      member: {
+        include: { association: true },
+      },
       collectionGroup: true,
     },
     orderBy: { cageNumber: 'asc' },
@@ -38,6 +40,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     let awards: string[] = []
     try { awards = JSON.parse(a.awards || '[]') } catch { /* empty */ }
 
+    const kvkkApproved = a.member?.kvkkApproved === true
+
     return {
       'Kafes No': a.cageNumber ?? '—',
       'Durum': STATUS_LABELS[a.status] ?? a.status,
@@ -55,6 +59,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       'Ödüller': awards.join(', ') || '—',
       'Üye': a.member?.name ?? '—',
       'Dernek': a.member?.association?.name ?? '—',
+      'KVKK': kvkkApproved ? 'Onaylı' : 'Onaysız',
+      'Telefon': kvkkApproved ? (a.member?.phone ?? '—') : '—',
+      'E-posta': kvkkApproved ? (a.member?.email ?? '—') : '—',
     }
   })
 
@@ -66,6 +73,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     { wch: 8 }, { wch: 14 }, { wch: 10 }, { wch: 6 }, { wch: 8 },
     { wch: 20 }, { wch: 20 }, { wch: 10 }, { wch: 14 }, { wch: 10 },
     { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 30 }, { wch: 20 }, { wch: 25 },
+    { wch: 10 }, { wch: 15 }, { wch: 25 },
   ]
   ws['!cols'] = colWidths
 

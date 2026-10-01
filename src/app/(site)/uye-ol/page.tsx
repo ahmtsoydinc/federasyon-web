@@ -5,6 +5,9 @@ import Link from 'next/link'
 
 export default function UyeOlPage() {
   const [form, setForm] = useState({ name: '', email: '', password: '', password2: '', phone: '', associationId: '' })
+  const [kvkkApproved, setKvkkApproved] = useState(false)
+  const [kvkkDoc, setKvkkDoc] = useState<{ id: number; title: string; fileUrl: string } | null>(null)
+  const [showKvkkModal, setShowKvkkModal] = useState(false)
   const [associations, setAssociations] = useState<{ id: number; name: string; city?: string }[]>([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -12,6 +15,10 @@ export default function UyeOlPage() {
 
   useEffect(() => {
     fetch('/api/associations').then(r => r.json()).then(setAssociations)
+    fetch('/api/documents').then(r => r.json()).then((docs: any[]) => {
+      const kvkk = docs.find((d: any) => d.title.toLowerCase().includes('kvkk'))
+      if (kvkk) setKvkkDoc(kvkk)
+    }).catch(() => {})
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -25,7 +32,7 @@ export default function UyeOlPage() {
     const res = await fetch('/api/member/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: form.name, email: form.email, password: form.password, phone: form.phone, associationId: form.associationId }),
+      body: JSON.stringify({ name: form.name, email: form.email, password: form.password, phone: form.phone, associationId: form.associationId, kvkkApproved }),
     })
     const data = await res.json()
     setLoading(false)
@@ -125,6 +132,35 @@ export default function UyeOlPage() {
             />
           </div>
 
+
+          {/* KVKK Bölümü */}
+          <div className="border border-amber-200 rounded-xl p-4 bg-amber-50">
+            <p className="text-xs font-semibold text-amber-800 mb-2">📋 KVKK Aydınlatma ve Rıza Metni</p>
+            <p className="text-xs text-amber-700 mb-3">
+              KVKK Aydınlatma ve Rıza Metni onaylanmaması durumunda Sadece İsminiz Soyisminiz ve Dernek Adınız olacak ve Diğer Bilgileriniz BULUNMAYACAKTIR.
+            </p>
+            {kvkkDoc && (
+              <button
+                type="button"
+                onClick={() => setShowKvkkModal(true)}
+                className="text-xs text-primary-600 hover:text-primary-700 underline mb-3 block"
+              >
+                KVKK Aydınlatma ve Rıza Metni&apos;ni görüntüle →
+              </button>
+            )}
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={kvkkApproved}
+                onChange={e => setKvkkApproved(e.target.checked)}
+                className="w-4 h-4 mt-0.5 text-primary-600 rounded flex-shrink-0"
+              />
+              <span className="text-xs text-gray-700">
+                KVKK Aydınlatma ve Rıza Metni&apos;ni okudum ve onaylıyorum
+              </span>
+            </label>
+          </div>
+
           {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg">{error}</div>}
 
           <button
@@ -140,6 +176,40 @@ export default function UyeOlPage() {
           <Link href="/uye-girisi" className="text-primary-600 hover:text-primary-700 font-medium">Giriş Yapın</Link>
         </p>
       </div>
+      {/* KVKK Belge Modalı */}
+      {showKvkkModal && kvkkDoc && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl flex flex-col" style={{ maxHeight: '90vh' }}>
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+              <h2 className="font-bold text-gray-800 text-lg">{kvkkDoc.title}</h2>
+              <button onClick={() => setShowKvkkModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">×</button>
+            </div>
+            <div className="flex-1 overflow-hidden p-4" style={{ minHeight: '400px' }}>
+              <iframe
+                src={kvkkDoc.fileUrl}
+                className="w-full h-full rounded-lg border border-gray-200"
+                style={{ minHeight: '380px' }}
+                title="KVKK Aydınlatma ve Rıza Metni"
+              />
+            </div>
+            <div className="px-6 py-4 border-t border-gray-100 flex gap-3">
+              <button
+                onClick={() => { setKvkkApproved(true); setShowKvkkModal(false) }}
+                className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors"
+              >
+                Okudum, Onaylıyorum
+              </button>
+              <button
+                onClick={() => setShowKvkkModal(false)}
+                className="px-5 text-gray-600 hover:text-gray-800 text-sm"
+              >
+                Kapat
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
