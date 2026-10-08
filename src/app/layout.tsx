@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   },
   description: 'Türkiye Süs Tavukları ve Bahçe Hayvanları Federasyonu resmi web sitesi',
   keywords: ['süs tavuğu', 'bahçe hayvanları', 'federasyon', 'tavukçuluk'],
+  manifest: '/manifest.json',
   icons: {
     icon: '/tshf-logo.png',
     shortcut: '/tshf-logo.png',
@@ -16,6 +17,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
+  themeColor: '#1a3a5c',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
