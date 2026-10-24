@@ -73,6 +73,9 @@ export default function AdminStandartlarPage() {
   const [filterCat, setFilterCat] = useState<number | ''>('')
   const [searchQ, setSearchQ] = useState('')
 
+  // Move popover
+  const [movePopover, setMovePopover] = useState<number | null>(null) // stdId
+
   const flash = (m: string) => { setMsg(m); setTimeout(() => setMsg(''), 3000) }
 
   const fetchAll = async () => {
@@ -86,6 +89,13 @@ export default function AdminStandartlarPage() {
   }
 
   useEffect(() => { fetchAll() }, [])
+
+  useEffect(() => {
+    if (movePopover === null) return
+    const close = () => setMovePopover(null)
+    window.addEventListener('click', close, { capture: true, once: true })
+    return () => window.removeEventListener('click', close, { capture: true })
+  }, [movePopover])
 
   // ── Categories CRUD ──────────────────────────────────────────────────────────
 
@@ -198,6 +208,23 @@ export default function AdminStandartlarPage() {
   }
 
   // ── Filtered standards ───────────────────────────────────────────────────────
+
+  // ── Move standard to another category ──────────────────────────────────────
+
+  const moveStd = async (stdId: number, newCategoryId: number) => {
+    const res = await fetch(`/api/admin/standartlar/${stdId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ categoryId: newCategoryId }),
+    })
+    if (res.ok) {
+      flash('Standart taşındı')
+      setMovePopover(null)
+      fetchAll()
+    } else {
+      flash('Hata oluştu')
+    }
+  }
 
   const filteredStds = standards.filter((s) => {
     const matchCat = filterCat === '' || s.categoryId === filterCat
@@ -328,12 +355,38 @@ export default function AdminStandartlarPage() {
                       {s.subtitle && <div className="text-xs text-gray-400">{s.subtitle}</div>}
                     </td>
                     <td className="px-4 py-2.5">
-                      <span
-                        className="text-[11px] px-2 py-0.5 rounded-full text-white font-medium"
-                        style={{ backgroundColor: s.category.color }}
-                      >
-                        {s.category.label}
-                      </span>
+                      <div className="relative inline-block">
+                        <button
+                          onClick={() => setMovePopover(movePopover === s.id ? null : s.id)}
+                          title="Kategoriyi değiştirmek için tıkla"
+                          className="text-[11px] px-2 py-0.5 rounded-full text-white font-medium hover:opacity-80 transition-opacity flex items-center gap-1"
+                          style={{ backgroundColor: s.category.color }}
+                        >
+                          {s.category.label}
+                          <svg className="w-2.5 h-2.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                          </svg>
+                        </button>
+                        {movePopover === s.id && (
+                          <div className="absolute left-0 top-full mt-1 z-30 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[160px]">
+                            <div className="px-3 py-1.5 text-[10px] text-gray-400 uppercase tracking-wide font-semibold border-b border-gray-100 mb-1">
+                              Taşı →
+                            </div>
+                            {categories
+                              .filter((c) => c.id !== s.categoryId)
+                              .map((c) => (
+                                <button
+                                  key={c.id}
+                                  onClick={() => moveStd(s.id, c.id)}
+                                  className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 flex items-center gap-2"
+                                >
+                                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
+                                  {c.label}
+                                </button>
+                              ))}
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="px-3 py-2.5 text-center">
                       {s.breedPdfUrl
