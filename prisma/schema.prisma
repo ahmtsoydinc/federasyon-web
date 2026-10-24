@@ -275,6 +275,46 @@ model AwardType {
   createdAt DateTime @default(now())
 }
 
+// ─── IRK STANDARTLARI ────────────────────────────────────────────────────────
+
+model StandardCategory {
+  id        Int        @id @default(autoincrement())
+  slug      String     @unique
+  label     String     // "Dev Irk Tavuk"
+  fullTitle String     // "Dev Irk Tavuk Standartları"
+  color     String     @default("#059669")
+  order     Int        @default(0)
+  standards Standard[]
+  createdAt DateTime   @default(now())
+}
+
+model Standard {
+  id           Int              @id @default(autoincrement())
+  categoryId   Int
+  category     StandardCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  name         String
+  subtitle     String?          // "Taslak", "Yerli ırk" gibi etiket
+  breedPdfUrl  String?          // Irk Standardı PDF yolu
+  colourPdfUrl String?          // Renk Standardı PDF yolu
+  breedDate    String?          // "23.11.2021"
+  colourDate   String?
+  isDraft      Boolean          @default(false)
+  order        Int              @default(0)
+  images       StandardImage[]
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+}
+
+model StandardImage {
+  id         Int      @id @default(autoincrement())
+  standardId Int
+  standard   Standard @relation(fields: [standardId], references: [id], onDelete: Cascade)
+  url        String
+  caption    String?
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+}
+
 // ─── SLIDER ──────────────────────────────────────────────────────────────────
 
 model Slider {

@@ -13,6 +13,7 @@ const menuGroups = [
       { icon: '📰', label: 'Haberler', href: '/admin/haberler', perm: 'haberler' },
       { icon: '📢', label: 'Duyurular', href: '/admin/duyurular', perm: 'duyurular' },
       { icon: '📂', label: 'Belgeler', href: '/admin/belgeler', perm: 'belgeler' },
+      { icon: '📋', label: 'Irk Standartları', href: '/admin/standartlar', perm: 'standartlar' },
       { icon: '🖼', label: 'Slider', href: '/admin/slider', perm: 'slider' },
       { icon: '📄', label: 'Sayfalar', href: '/admin/sayfalar', perm: 'sayfalar' },
       { icon: '🏛', label: 'Yönetim Kadrosu', href: '/admin/yonetim', perm: 'yonetim' },
