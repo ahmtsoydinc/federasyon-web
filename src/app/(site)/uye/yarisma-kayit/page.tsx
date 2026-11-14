@@ -5,32 +5,32 @@ import { useEffect, useState, useCallback } from 'react'
 const ANIMAL_TYPES = [
   { value: 'TAVUK', label: 'Tavuk' },
   { value: 'HOROZ', label: 'Horoz' },
-  { value: 'ORDEK', label: 'Ördek' },
-  { value: 'GUVERCIN', label: 'Güvercin' },
-  { value: 'TAVSAN', label: 'Tavşan' },
+  { value: 'ORDEK', label: 'Ãrdek' },
+  { value: 'GUVERCIN', label: 'GÃ¼vercin' },
+  { value: 'TAVSAN', label: 'TavÅan' },
   { value: 'KAZ', label: 'Kaz' },
   { value: 'HINDI', label: 'Hindi' },
-  { value: 'BILDIRCIN', label: 'Bıldırcın' },
+  { value: 'BILDIRCIN', label: 'B±ldÄ±rcÄ±n' },
 ]
 
-const BREEDS = [{ value: 'DEV', label: 'Dev' }, { value: 'CUCE', label: 'Cüce' }]
+const BREEDS = [{ value: 'DEV', label: 'Dev' }, { value: 'CUCE', label: 'CÃ¼ce' }]
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   pending: { label: 'Taslak', color: 'text-gray-600 bg-gray-100' },
-  submitted: { label: 'Başkan Onayı Bekleniyor', color: 'text-amber-600 bg-amber-50' },
-  assoc_approved: { label: 'Federasyon Onayı Bekleniyor', color: 'text-blue-600 bg-blue-50' },
-  fed_approved: { label: 'Onaylandı', color: 'text-green-600 bg-green-50' },
+  submitted: { label: 'BaÅkan OnayÄ± Bekleniyor', color: 'text-amber-600 bg-amber-50' },
+  assoc_approved: { label: 'Federasyon OnayÄ± Bekleniyor', color: 'text-blue-600 bg-blue-50' },
+  fed_approved: { label: 'OnaylandÄ±', color: 'text-green-600 bg-green-50' },
   rejected: { label: 'Reddedildi', color: 'text-red-600 bg-red-50' },
 }
 
 const TYPE_LABELS: Record<string, string> = {
-  TAVUK: 'Tavuk', HOROZ: 'Horoz', ORDEK: 'Ördek', GUVERCIN: 'Güvercin',
-  TAVSAN: 'Tavşan', KAZ: 'Kaz', HINDI: 'Hindi', BILDIRCIN: 'Bıldırcın',
+  TAVUK: 'Tavuk', HOROZ: 'Horoz', ORDEK: 'Ãrdek', GUVERCIN: 'GÃ¼vercin',
+  TAVSAN: 'TavÅan', KAZ: 'Kaz', HINDI: 'Hindi', BILDIRCIN: 'BÄ±ldÄ±rcÄ±n',
 }
 
 const currentYear = new Date().getFullYear()
 const BRACELET_YEARS = Array.from({ length: 6 }, (_, i) => currentYear - i)
-const MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık']
+const MONTHS = ['Ocak','Åubat','Mart','Nisan','MayÄ±s','Haziran','Temmuz','AÄustos','EylÃ¼l','Ekim','KasÄ±m','AralÄ±k']
 
 function hasBreed(type: string) { return type === 'TAVUK' || type === 'HOROZ' || type === 'TAVSAN' }
 function hasGender(type: string) { return !['TAVUK', 'HOROZ'].includes(type) }
@@ -66,23 +66,24 @@ export default function YarismaKayitPage() {
   const [editId, setEditId] = useState<number | null>(null)
   const [submitAllLoading, setSubmitAllLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
-  const [showRegulationModal, setShowRegulationModal] = useState(false)
-  const [regulationAccepted, setRegulationAccepted] = useState(false)
   const [lockedSpecies, setLockedSpecies] = useState<string | null>(null)
   const [lockedColor, setLockedColor] = useState<string | null>(null)
-  const [memberKvkk, setMemberKvkk] = useState<boolean | null>(null)
+  const [formStep, setFormStep] = useState<'select' | 'form'>('select')
+  const [showDetailModal, setShowDetailModal] = useState(false)
+  const [detailGroupId, setDetailGroupId] = useState<number | null>(null)
+  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [showRegulationModal, setShowRegulationModal] = useState(false)
+  const [regulationAccepted, setRegulationAccepted] = useState(false)
 
   const fetchData = useCallback(async () => {
-    const [compRes, animRes, grpRes, meRes] = await Promise.all([
+    const [compRes, animRes, grpRes] = await Promise.all([
       fetch('/api/competitions/active'),
       fetch('/api/competition-animals'),
       fetch('/api/collection-groups'),
-      fetch('/api/member/me'),
     ])
     const compData = await compRes.json()
     const animData = await animRes.json()
     const grpData = await grpRes.json()
-    const meData = meRes.ok ? await meRes.json() : null
 
     setCompetition(compData.competition)
     setRegistrationOpen(compData.registrationOpen ?? false)
@@ -90,13 +91,12 @@ export default function YarismaKayitPage() {
       setAnimals(Array.isArray(animData) ? animData.filter((a: any) => a.competitionId === compData.competition.id) : [])
       setGroups(Array.isArray(grpData) ? grpData.filter((g: any) => g.competitionId === compData.competition.id) : [])
     }
-    if (meData) setMemberKvkk(meData.kvkkApproved ?? false)
     setLoading(false)
   }, [])
 
   useEffect(() => { fetchData() }, [fetchData])
 
-  // Cins listesi yükle
+  // Cins listesi yÃ¼kle
   useEffect(() => {
     if (!form.animalType) return
     const params = new URLSearchParams({ animalType: form.animalType, distinct: 'species' })
@@ -106,7 +106,7 @@ export default function YarismaKayitPage() {
       .then(data => { setSpeciesList(Array.isArray(data) ? data : []); setForm(f => ({ ...f, species: '', color: '' })) })
   }, [form.animalType, form.breed])
 
-  // Renk listesi yükle
+  // Renk listesi yÃ¼kle
   useEffect(() => {
     if (!form.animalType || !form.species) return
     const params = new URLSearchParams({ animalType: form.animalType, species: form.species })
@@ -116,7 +116,7 @@ export default function YarismaKayitPage() {
       .then(data => { setColorList(Array.isArray(data) ? data : []); setForm(f => ({ ...f, color: '' })) })
   }, [form.animalType, form.breed, form.species])
 
-  // Koleksiyon grubu seçilince cins ve rengi kilitle
+  // Koleksiyon grubu seÃ§ilince cins ve rengi kilitle
   useEffect(() => {
     if (!form.collectionGroupId) { setLockedSpecies(null); setLockedColor(null); return }
     const groupAnimals = animals.filter(a => a.collectionGroupId === parseInt(form.collectionGroupId))
@@ -132,12 +132,18 @@ export default function YarismaKayitPage() {
     }
   }, [form.collectionGroupId, animals])
 
-  const openAdd = () => {
+  const openAdd = (entryType?: string, groupId?: number) => {
     setEditId(null)
-    setForm(EMPTY_FORM)
+    const initForm: FormData = { ...EMPTY_FORM }
+    if (entryType) {
+      initForm.entryType = entryType
+      if (groupId) initForm.collectionGroupId = String(groupId)
+    }
+    setForm(initForm)
     setError('')
     setLockedSpecies(null)
     setLockedColor(null)
+    setFormStep(entryType ? 'form' : 'select')
     setShowModal(true)
   }
 
@@ -158,11 +164,12 @@ export default function YarismaKayitPage() {
     setError('')
     setLockedSpecies(null)
     setLockedColor(null)
+    setFormStep('form')
     setShowModal(true)
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Bu hayvanı silmek istediğinizden emin misiniz?')) return
+    if (!confirm('Bu hayvanÄ± silmek istediÄinizden emin misiniz?')) return
     await fetch(`/api/competition-animals/${id}`, { method: 'DELETE' })
     fetchData()
   }
@@ -171,7 +178,7 @@ export default function YarismaKayitPage() {
     setError('')
     setSubmitting(true)
 
-    // Koleksiyon grubu: yoksa yeni oluştur
+    // Koleksiyon grubu: yoksa yeni oluÅtur
     let groupId = form.collectionGroupId ? parseInt(form.collectionGroupId) : null
     if (form.entryType === 'COLLECTION' && !groupId) {
       const grpRes = await fetch('/api/collection-groups', {
@@ -203,12 +210,21 @@ export default function YarismaKayitPage() {
     const data = await res.json()
     setSubmitting(false)
 
-    if (!res.ok) { setError(data.error || 'Hata oluştu'); return }
+    if (!res.ok) { setError(data.error || 'Hata oluÅtu'); return }
     setShowModal(false)
     fetchData()
   }
 
+  const handleSubmitAll = () => {
+    const pending = animals.filter(a => a.status === 'pending')
+    if (pending.length === 0) return
+    setRegulationAccepted(false)
+    setShowReviewModal(true)
+  }
+
   const doSubmitAll = async () => {
+    setShowRegulationModal(false)
+    setShowReviewModal(false)
     setSubmitAllLoading(true)
     await fetch('/api/competition-animals/submit', {
       method: 'POST',
@@ -217,49 +233,37 @@ export default function YarismaKayitPage() {
     })
     setSubmitAllLoading(false)
     setSubmitted(true)
-    setShowRegulationModal(false)
+    setRegulationAccepted(false)
     fetchData()
-  }
-
-  const handleSubmitAll = async () => {
-    const pending = animals.filter(a => a.status === 'pending')
-    if (pending.length === 0) return
-    if (competition?.regulationDocument) {
-      setRegulationAccepted(false)
-      setShowRegulationModal(true)
-      return
-    }
-    if (!confirm(`${pending.length} hayvanı başkanın onayına göndermek istiyor musunuz? Gönderdikten sonra düzenleme yapılamaz.`)) return
-    await doSubmitAll()
   }
 
   const setF = (key: keyof FormData, value: string) => setForm(f => ({ ...f, [key]: value }))
 
-  if (loading) return <div className="py-20 text-center text-gray-400">Yükleniyor...</div>
+  if (loading) return <div className="py-20 text-center text-gray-400">YÃ¼kleniyor...</div>
 
   if (!competition) return (
     <div className="text-center py-20">
-      <div className="text-5xl mb-4">🏆</div>
-      <h2 className="text-xl font-bold text-gray-700 mb-2">Aktif Yarışma Yok</h2>
-      <p className="text-gray-500">Şu an aktif bir yarışma bulunmamaktadır.</p>
+      <div className="text-5xl mb-4">ð</div>
+      <h2 className="text-xl font-bold text-gray-700 mb-2">Aktif YarÄ±Åma Yok</h2>
+      <p className="text-gray-500">Åu an aktif bir yarÄ±Åma bulunmamaktadÄ±r.</p>
     </div>
   )
 
   if (!registrationOpen) return (
     <div>
       <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex items-center gap-3">
-        <span className="text-xl">🔒</span>
+        <span className="text-xl">ð</span>
         <div>
           <p className="text-sm font-semibold text-amber-800">{competition.name}</p>
           <p className="text-xs text-amber-600">
-            Kayıt dönemi: {new Date(competition.registrationStart).toLocaleDateString('tr-TR')} — {new Date(competition.registrationEnd).toLocaleDateString('tr-TR')}
+            KayÄ±t dÃ¶nemi: {new Date(competition.registrationStart).toLocaleDateString('tr-TR')} â {new Date(competition.registrationEnd).toLocaleDateString('tr-TR')}
           </p>
         </div>
       </div>
       {animals.length === 0 ? (
         <div className="text-center py-16 text-gray-400">
-          <div className="text-5xl mb-3">🐣</div>
-          <p>Bu yarışmaya kayıtlı hayvan bulunmuyor.</p>
+          <div className="text-5xl mb-3">ð£</div>
+          <p>Bu yarÄ±Åmaya kayÄ±tlÄ± hayvan bulunmuyor.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -272,14 +276,14 @@ export default function YarismaKayitPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-bold text-gray-800">{TYPE_LABELS[a.animalType]}</span>
-                      {a.breed && <span className="text-xs text-gray-500">({a.breed === 'DEV' ? 'Dev' : 'Cüce'})</span>}
-                      {a.gender && <span className="text-xs text-gray-500">{a.gender === 'ERKEK' ? 'Erkek' : 'Dişi'}</span>}
-                      {a.entryType === 'COLLECTION' && a.collectionGroup && (
+                      {a.breed && <span className="text-xs text-gray-500">({a.breed === 'DEV' ? 'Dev' : 'CÃ¼ce'})</span>}
+                       {a.gender && <span className="text-xs text-gray-500">{a.gender === 'ERKEK' ? 'Erkek' : 'DiÅi'}</span>}
+                       {a.entryType === 'COLLECTION' && a.collectionGroup && (
                         <span className="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full">
                           Koleksiyon {a.collectionGroup.groupNumber}
                         </span>
                       )}
-                      {a.cageNumber && (
+                       {a.cageNumber && (
                         <span className="text-xs bg-blue-50 text-blue-700 font-mono px-2 py-0.5 rounded-full">
                           Kafes {a.cageNumber}
                         </span>
@@ -288,15 +292,15 @@ export default function YarismaKayitPage() {
                     <div className="text-sm text-gray-500 mt-0.5">{a.species} / {a.color}</div>
                     <div className="text-xs text-gray-400 mt-0.5">
                       {a.animalType === 'TAVSAN'
-                        ? (a.chipNumber ? `Cip: ${a.chipNumber}` : `Dövme: ${a.tattooLeftEar} / ${a.tattooRightEar}`)
-                        : (a.braceletYear ? `${a.braceletYear} / ${a.braceletNumber || '—'}` : '')
+                        ? (a.chipNumber ? `Cip: ${a.chipNumber}` : `DÃ¶vme: ${a.tattooLeftEar} / ${a.tattooRightEar}`)
+                        : (a.braceletYear ? `${a.braceletYear} / ${a.braceletNumber || 'â'}` : '')
                       }
                     </div>
                     {a.individualScore !== null && a.individualScore !== undefined && (
                       <div className="mt-2 flex items-center gap-3 flex-wrap">
                         <span className="text-sm font-semibold text-primary-700">Puan: {a.individualScore}</span>
                         {a.collectionGroup?.groupScore !== null && a.collectionGroup?.groupScore !== undefined && (
-                          <span className="text-sm text-gray-600">Grup Puanı: {a.collectionGroup.groupScore}</span>
+                          <span className="text-sm text-gray-600">Grup PuanÄ±: {a.collectionGroup.groupScore}</span>
                         )}
                       </div>
                     )}
@@ -304,7 +308,7 @@ export default function YarismaKayitPage() {
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {awardsArr.map((aw, i) => (
                           <span key={i} className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-medium">
-                            🏆 {aw}
+                            ð {aw}
                           </span>
                         ))}
                       </div>
@@ -323,7 +327,7 @@ export default function YarismaKayitPage() {
   const pendingCount = animals.filter(a => a.status === 'pending').length
   const submittedCount = animals.filter(a => a.status === 'submitted').length
 
-  // Eksik koleksiyon grupları (4'ten az hayvan içeren)
+  // Eksik koleksiyon gruplarÄ± (4'ten az hayvan iÃ§eren)
   const incompleteGroups = groups
     .map(g => ({
       ...g,
@@ -337,7 +341,7 @@ export default function YarismaKayitPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-800">{competition.name}</h1>
           <p className="text-gray-500 text-sm mt-1">
-            Kayıt bitiş: {new Date(competition.registrationEnd).toLocaleDateString('tr-TR')}
+            KayÄ±t bitiÅ: {new Date(competition.registrationEnd).toLocaleDateString('tr-TR')}
           </p>
         </div>
         <button onClick={openAdd}
@@ -346,37 +350,65 @@ export default function YarismaKayitPage() {
         </button>
       </div>
 
-
-      {/* KVKK Durumu */}
-      {memberKvkk !== null && (
-        memberKvkk ? (
-          <div className="bg-green-50 border border-green-200 rounded-xl p-3 mb-4 flex items-center gap-2">
-            <span className="text-green-600 text-base">✅</span>
-            <span className="text-sm text-green-700 font-medium">KVKK Aydınlatma ve Rıza Metni: Onaylı</span>
-          </div>
-        ) : (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-amber-600 text-base">⚠️</span>
-              <span className="text-sm text-amber-800 font-semibold">KVKK Aydınlatma ve Rıza Metni: Onaysız</span>
-            </div>
-            <p className="text-xs text-amber-700">
-              KVKK Aydınlatma ve Rıza Metni onaylanmaması durumunda Sadece İsminiz Soyisminiz ve Dernek Adınız olacak ve Diğer Bilgileriniz BULUNMAYACAKTIR.
-            </p>
-          </div>
-        )
-      )}
-
       {submitted && (
         <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-5 text-green-700 text-sm">
-          Hayvanlarınız dernek başkanının onayına gönderildi. Onay durumunu aşağıdan takip edebilirsiniz.
+          HayvanlarÄ±nÄ±z dernek baÅkanÄ±nÄ±n onayÄ±na gÃ¶nderildi. Onay durumunu aÅaÄÄ±dan takip edebilirsiniz.
+        </div>
+      )}
+
+      {/* Koleksiyon GruplarÄ± */}
+      {groups.length > 0 && (
+        <div className="mb-5">
+          <h3 className="text-sm font-semibold text-gray-600 mb-2">KoleksiyonlarÄ±m</h3>
+          <div className="space-y-2">
+            {groups.map(g => {
+              const groupAnimals = animals.filter(a => a.collectionGroupId === g.id)
+              const count = groupAnimals.length
+              const firstAnimal = groupAnimals[0]
+              const isComplete = count >= 4
+              return (
+                <div key={g.id} className={`bg-white rounded-xl border p-3 ${isComplete ? 'border-green-200 bg-green-50/30' : 'border-amber-200'}`}>
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-gray-800 text-sm">Koleksiyon {g.groupNumber}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${isComplete ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                          {count}/4 hayvan
+                        </span>
+                        {isComplete && <span className="text-xs text-green-600">â Tam</span>}
+                      </div>
+                      {firstAnimal && (
+                        <div className="text-xs text-gray-500 mt-0.5">{TYPE_LABELS[firstAnimal.animalType]} Â· {firstAnimal.species} / {firstAnimal.color}</div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {count < 4 && (
+                        <button onClick={() => openAdd('COLLECTION', g.id)}
+                          className="text-xs bg-primary-50 text-primary-700 border border-primary-200 px-3 py-1.5 rounded-lg hover:bg-primary-100 transition-colors">
+                          + Hayvan Ekle
+                        </button>
+                      )}
+                      <button onClick={() => { setDetailGroupId(g.id); setShowDetailModal(true) }}
+                        className="text-xs text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
+                        Detay
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          <button onClick={() => openAdd('COLLECTION')}
+            className="mt-2 w-full text-xs text-primary-600 border border-dashed border-primary-300 rounded-xl py-2 hover:bg-primary-50 transition-colors">
+            + Yeni Koleksiyon OluÅtur
+          </button>
         </div>
       )}
 
       {animals.length === 0 ? (
         <div className="text-center py-16 text-gray-400">
-          <div className="text-5xl mb-3">🐣</div>
-          <p>Henüz hayvan eklenmedi.</p>
+          <div className="text-5xl mb-3">ð£</div>
+          <p>HenÃ¼z hayvan eklenmedi.</p>
         </div>
       ) : (
         <>
@@ -390,8 +422,8 @@ export default function YarismaKayitPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-bold text-gray-800">{TYPE_LABELS[a.animalType]}</span>
-                        {a.breed && <span className="text-xs text-gray-500">({a.breed === 'DEV' ? 'Dev' : 'Cüce'})</span>}
-                        {a.gender && <span className="text-xs text-gray-500">{a.gender === 'ERKEK' ? 'Erkek' : 'Dişi'}</span>}
+                        {a.breed && <span className="text-xs text-gray-500">({a.breed === 'DEV' ? 'Dev' : 'CÃ¼ce'})</span>}
+                        {a.gender && <span className="text-xs text-gray-500">{a.gender === 'ERKEK' ? 'Erkek' : 'DiÅi'}</span>}
                         {a.entryType === 'COLLECTION' && a.collectionGroup && (
                           <span className="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full">
                             Koleksiyon {a.collectionGroup.groupNumber}
@@ -406,15 +438,15 @@ export default function YarismaKayitPage() {
                       <div className="text-sm text-gray-500 mt-0.5">{a.species} / {a.color}</div>
                       <div className="text-xs text-gray-400 mt-0.5">
                         {a.animalType === 'TAVSAN'
-                          ? (a.chipNumber ? `Cip: ${a.chipNumber}` : `Dövme: ${a.tattooLeftEar} / ${a.tattooRightEar}`)
-                          : (a.braceletYear ? `${a.braceletYear} / ${a.braceletNumber || '—'}` : '')
+                          ? (a.chipNumber ? `Cip: ${a.chipNumber}` : `DÃ¶vme: ${a.tattooLeftEar} / ${a.tattooRightEar}`)
+                          : (a.braceletYear ? `${a.braceletYear} / ${a.braceletNumber || 'â'}` : '')
                         }
                       </div>
                       {a.individualScore !== null && a.individualScore !== undefined && (
                         <div className="mt-2 flex items-center gap-3 flex-wrap">
                           <span className="text-sm font-semibold text-primary-700">Puan: {a.individualScore}</span>
                           {a.collectionGroup?.groupScore !== null && a.collectionGroup?.groupScore !== undefined && (
-                            <span className="text-sm text-gray-600">Grup Puanı: {a.collectionGroup.groupScore}</span>
+                            <span className="text-sm text-gray-600">Grup PuanÄ±: {a.collectionGroup.groupScore}</span>
                           )}
                         </div>
                       )}
@@ -422,7 +454,7 @@ export default function YarismaKayitPage() {
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           {awardsArr.map((aw, i) => (
                             <span key={i} className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-medium">
-                              🏆 {aw}
+                              ð {aw}
                             </span>
                           ))}
                         </div>
@@ -432,12 +464,12 @@ export default function YarismaKayitPage() {
                       <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${st?.color}`}>{st?.label}</span>
                       {a.status === 'pending' && (
                         <>
-                          <button onClick={() => openEdit(a)} className="text-xs text-blue-600 hover:text-blue-800 px-2 py-1">Düzenle</button>
+                          <button onClick={() => openEdit(a)} className="text-xs text-blue-600 hover:text-blue-800 px-2 py-1">DÃ¼zenle</button>
                           <button onClick={() => handleDelete(a.id)} className="text-xs text-red-500 hover:text-red-700 px-2 py-1">Sil</button>
                         </>
                       )}
                       {a.status === 'submitted' && (
-                        <span className="text-xs text-gray-400 italic">Gönderildi 🔒</span>
+                        <span className="text-xs text-gray-400 italic">GÃ¶nderildi'ð</span>
                       )}
                       {a.status === 'rejected' && a.rejectionNote && (
                         <span className="text-xs text-red-600 max-w-[160px] truncate" title={a.rejectionNote}>Red: {a.rejectionNote}</span>
@@ -454,7 +486,7 @@ export default function YarismaKayitPage() {
               <p className="text-sm font-semibold text-red-700 mb-2">Eksik Koleksiyon Grubu</p>
               {incompleteGroups.map(g => (
                 <p key={g.id} className="text-sm text-red-600">
-                  Koleksiyon {g.groupNumber}: {g.animalCount}/4 hayvan — {4 - g.animalCount} hayvan daha eklenmeli
+                  Koleksiyon {g.groupNumber}: {g.animalCount}/4 hayvan â {4 - g.animalCount} hayvan daha eklenmeli
                 </p>
               ))}
             </div>
@@ -463,7 +495,7 @@ export default function YarismaKayitPage() {
           {submittedCount > 0 && pendingCount === 0 && !submitted && (
             <div className="bg-green-50 border border-green-200 rounded-xl p-4">
               <p className="text-sm text-green-700">
-                ✅ <strong>{submittedCount}</strong> hayvanınız başkanın onayına gönderildi. Onay bekleniyor.
+                â <strong>{submittedCount}</strong> hayvanÄ±nÄ±z baÅkanÄ±n onayÄ±na gÃ¶nderildi. Onay bekleniyor.
               </p>
             </div>
           )}
@@ -471,39 +503,72 @@ export default function YarismaKayitPage() {
           {pendingCount > 0 && !submitted && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
               <p className="text-sm text-amber-800 mb-1">
-                <strong>{pendingCount}</strong> taslak hayvanınız var.
-                {submittedCount > 0 && <span className="text-amber-600"> ({submittedCount} hayvan zaten gönderildi.)</span>}
+                <strong>{pendingCount}</strong> taslak hayvanÄ±nÄ±z var.
+                {submittedCount > 0 && <span className="text-amber-600"> ({submittedCount} hayvan zaten gÃ¶nderildi.)</span>}
               </p>
-              <p className="text-xs text-amber-700 mb-3">Gönderdikten sonra düzenleme ve silme işlemi yapılamaz.</p>
+              <p className="text-xs text-amber-700 mb-3">GÃ¶nderdikten sonra dÃ¼zenleme ve silme iÅlemi yapÄ±lamaz.</p>
               <button
                 onClick={handleSubmitAll}
                 disabled={submitAllLoading || incompleteGroups.length > 0}
-                title={incompleteGroups.length > 0 ? 'Eksik koleksiyon grupları tamamlanmalı' : ''}
+                title={incompleteGroups.length > 0 ? 'Eksik koleksiyon gruplarÄ± tamamlanmalÄ±' : ''}
                 className="bg-primary-600 hover:bg-primary-700 text-white font-medium px-5 py-2 rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {submitAllLoading ? 'Gönderiliyor...' : 'Listeyi Onayla ve Başkana Gönder'}
+                {submitAllLoading ? 'GÃ¶nderiliyor...' : 'Listeyi Onayla ve BaÅkana GÃ¶nder'}
               </button>
               {incompleteGroups.length > 0 && (
-                <p className="text-xs text-red-600 mt-2">Göndermeden önce tüm koleksiyon gruplarını 4 hayvana tamamlayın.</p>
+                <p className="text-xs text-red-600 mt-2">GÃ¶ndermeden Ã¶nce tÃ¼m koleksiyon gruplarÄ±nÄ± 4 hayvana tamamlayÄ±n.</p>
               )}
             </div>
           )}
         </>
       )}
 
-      {/* Hayvan Ekle/Düzenle Modal */}
+      {/* Hayvan Ekle/DÃ¼zenle Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="bg-white w-full sm:rounded-2xl sm:max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between">
-              <h2 className="font-bold text-gray-800">{editId ? 'Hayvanı Düzenle' : 'Hayvan Ekle'}</h2>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+              <div className="flex items-center gap-2">
+                {!editId && formStep === 'form' && (
+                  <button onClick={() => setFormStep('select')} className="text-gray-400 hover:text-gray-700 text-sm mr-1">â Geri</button>
+                )}
+                <h2 className="font-bold text-gray-800">
+                  {editId ? 'HayvanÄ± DÃ¼zenle' : formStep === 'select' ? 'KayÄ±t TÃ¼rÃ¼nÃ¼ SeÃ§in' : form.entryType === 'COLLECTION' ? 'ð Koleksiyona Ekle' : 'ð¦ Tek Hayvan Ekle'}
+                </h2>
+              </div>
+              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">Ã</button>
             </div>
 
+            {/* ADIM 1: KayÄ±t tÃ¼rÃ¼ seÃ§ */}
+            {!editId && formStep === 'select' && (
+              <div className="p-5 space-y-3">
+                <p className="text-xs text-gray-500">Bu hayvanÄ± nasÄ±l kaydetmek istiyorsunuz?</p>
+                <button
+                  onClick={() => { setF('entryType', 'SINGLE'); setFormStep('form') }}
+                  className="w-full flex items-center gap-4 p-4 border-2 border-gray-200 rounded-xl hover:border-primary-400 hover:bg-primary-50 transition-all text-left">
+                  <span className="text-3xl">ð¦</span>
+                  <div>
+                    <div className="font-semibold text-gray-800 text-sm">Tek Hayvan</div>
+                    <div className="text-xs text-gray-500 mt-0.5">Bireysel yarÄ±Åma kaydÄ±</div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => { setF('entryType', 'COLLECTION'); setF('collectionGroupId', ''); setFormStep('form') }}
+                  className="w-full flex items-center gap-4 p-4 border-2 border-gray-200 rounded-xl hover:border-purple-400 hover:bg-purple-50 transition-all text-left">
+                  <span className="text-3xl">ð</span>
+                  <div>
+                    <div className="font-semibold text-gray-800 text-sm">Koleksiyona Ekle</div>
+                    <div className="text-xs text-gray-500 mt-0.5">Grup koleksiyon yarÄ±ÅmasÄ± (4 hayvan)</div>
+                  </div>
+                </button>
+              </div>
+            )}
+
+            {(editId || formStep === 'form') && (
             <div className="p-5 space-y-4">
-              {/* Tür */}
+              {/* TÃ¼r */}
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-2">Tür *</label>
+                <label className="block text-xs font-medium text-gray-600 mb-2">TÃ¼r *</label>
                 <div className="grid grid-cols-4 gap-2">
                   {ANIMAL_TYPES.map(t => (
                     <button key={t.value} onClick={() => setF('animalType', t.value)}
@@ -514,7 +579,7 @@ export default function YarismaKayitPage() {
                 </div>
               </div>
 
-              {/* Irk (Tavuk, Horoz, Tavşan) */}
+              {/* Irk (Tavuk, Horoz, TavÅan) */}
               {hasBreed(form.animalType) && (
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-2">Irk *</label>
@@ -529,7 +594,7 @@ export default function YarismaKayitPage() {
                 </div>
               )}
 
-              {/* Cinsiyet (Horoz/Tavuk hariç) */}
+              {/* Cinsiyet (Horoz/Tavuk hariÃ§) */}
               {hasGender(form.animalType) && (
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-2">Cinsiyet *</label>
@@ -540,7 +605,7 @@ export default function YarismaKayitPage() {
                     </button>
                     <button onClick={() => setF('gender', 'DISI')}
                       className={`py-2 text-xs font-medium rounded-lg border transition-colors ${form.gender === 'DISI' ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-gray-200 text-gray-600'}`}>
-                      Dişi
+                      DiÅi
                     </button>
                   </div>
                 </div>
@@ -552,12 +617,12 @@ export default function YarismaKayitPage() {
                 {lockedSpecies ? (
                   <div className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-700 flex items-center justify-between">
                     <span>{lockedSpecies}</span>
-                    <span className="text-xs text-gray-400">🔒 Koleksiyon cinsi</span>
+                    <span className="text-xs text-gray-400">ð Koleksiyon cinsi</span>
                   </div>
                 ) : (
                   <select value={form.species} onChange={e => setF('species', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400 bg-white">
-                    <option value="">{speciesList.length === 0 ? 'Standart verisi yükleniyor...' : 'Seçiniz'}</option>
+                    <option value="">{speciesList.length === 0 ? 'Standart verisi yÃ¼kleniyor...' : 'SeÃ§iniz'}</option>
                     {speciesList.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 )}
@@ -569,13 +634,13 @@ export default function YarismaKayitPage() {
                 {lockedColor ? (
                   <div className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-700 flex items-center justify-between">
                     <span>{lockedColor}</span>
-                    <span className="text-xs text-gray-400">🔒 Koleksiyon rengi</span>
+                    <span className="text-xs text-gray-400">ð Koleksiyon rengi</span>
                   </div>
                 ) : (
                   <select value={form.color} onChange={e => setF('color', e.target.value)}
                     disabled={!form.species}
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400 bg-white disabled:opacity-50">
-                    <option value="">Seçiniz</option>
+                    <option value="">SeÃ§iniz</option>
                     {colorList.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 )}
@@ -585,32 +650,32 @@ export default function YarismaKayitPage() {
               {isTavsan(form.animalType) ? (
                 <>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Doğum Tarihi *</label>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">DoÄum Tarihi *</label>
                     <div className="grid grid-cols-2 gap-2">
                       <select value={form.birthMonth} onChange={e => setF('birthMonth', e.target.value)}
                         className="px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400 bg-white">
-                        <option value="">Ay seçin</option>
+                        <option value="">Ay seÃ§in</option>
                         {MONTHS.map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
                       </select>
                       <input type="number" value={form.birthYear} onChange={e => setF('birthYear', e.target.value)}
-                        placeholder="Yıl (örn: 2023)"
+                        placeholder="YÄ±l (Ã¶rn: 2023)"
                         className="px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400" />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Cip Numarası (15 hane)</label>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Cip NumarasÄ± (15 hane)</label>
                     <input value={form.chipNumber} onChange={e => setF('chipNumber', e.target.value)}
-                      maxLength={15} placeholder="15 haneli cip numarası"
+                      maxLength={15} placeholder="15 haneli cip numarasÄ±"
                       className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Dövme Numarası</label>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">DÃ¶vme NumarasÄ±</label>
                     <div className="grid grid-cols-2 gap-2">
                       <input value={form.tattooLeftEar} onChange={e => setF('tattooLeftEar', e.target.value)}
                         maxLength={6} placeholder="Sol kulak (6 hane)"
                         className="px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400" />
                       <input value={form.tattooRightEar} onChange={e => setF('tattooRightEar', e.target.value)}
-                        maxLength={7} placeholder="Sağ kulak (7 hane)"
+                        maxLength={7} placeholder="SaÄ kulak (7 hane)"
                         className="px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400" />
                     </div>
                   </div>
@@ -624,7 +689,7 @@ export default function YarismaKayitPage() {
                       {BRACELET_YEARS.map(y => <option key={y} value={y}>{y}</option>)}
                     </select>
                     <input value={form.braceletNumber} onChange={e => setF('braceletNumber', e.target.value)}
-                      placeholder="Bilezik numarası"
+                      placeholder="Bilezik numarasÄ±"
                       className="px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400" />
                   </div>
                 </div>
@@ -632,7 +697,7 @@ export default function YarismaKayitPage() {
 
               {/* Tek / Koleksiyon */}
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-2">Kayıt Türü *</label>
+                <label className="block text-xs font-medium text-gray-600 mb-2">KayÄ±t TÃ¼rÃ¼ *</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button onClick={() => setF('entryType', 'SINGLE')}
                     className={`py-2 text-xs font-medium rounded-lg border transition-colors ${form.entryType === 'SINGLE' ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-gray-200 text-gray-600'}`}>
@@ -650,24 +715,24 @@ export default function YarismaKayitPage() {
                   <label className="block text-xs font-medium text-gray-600 mb-1">Koleksiyon Grubu</label>
                   <select value={form.collectionGroupId} onChange={e => setF('collectionGroupId', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-400 bg-white">
-                    <option value="">Yeni Koleksiyon Oluştur</option>
+                    <option value="">Yeni Koleksiyon OluÅtur</option>
                     {groups.map(g => (
                       <option key={g.id} value={g.id}>
                         Koleksiyon {g.groupNumber} ({g.animals?.length || 0}/4 hayvan)
                       </option>
                     ))}
                   </select>
-                  {/* Koleksiyon Şartları Kutusu */}
+                  {/* Koleksiyon ÅartlarÄ± Kutusu */}
                   <div className="mt-3 rounded-xl border-2 border-amber-300 bg-amber-50 p-3">
                     <div className="flex items-center gap-1.5 mb-2">
-                      <span className="text-amber-600 text-base">⚠️</span>
-                      <span className="text-xs font-bold text-amber-800 uppercase tracking-wide">Koleksiyon Şartları</span>
+                      <span className="text-amber-600 text-base">â ï¸</span>
+                      <span className="text-xs font-bold text-amber-800 uppercase tracking-wide">Koleksiyon ÅartlarÄ±</span>
                     </div>
                     <div className="grid grid-cols-3 gap-1.5 mb-2">
                       {[
-                        { label: '2 Erkek', sub: '2 Dişi' },
-                        { label: '1 Dişi', sub: '3 Erkek' },
-                        { label: '3 Dişi', sub: '1 Erkek' },
+                        { label: '2 Erkek', sub: '2 DiÅi' },
+                        { label: '1 DiÅi', sub: '3 Erkek' },
+                        { label: '3 DiÅi', sub: '1 Erkek' },
                       ].map((c, i) => (
                         <div key={i} className="bg-white border border-amber-200 rounded-lg px-2 py-1.5 text-center">
                           <div className="text-xs font-bold text-amber-800">{c.label}</div>
@@ -676,8 +741,8 @@ export default function YarismaKayitPage() {
                       ))}
                     </div>
                     <div className="flex items-center gap-1.5 text-xs text-amber-700 font-medium">
-                      <span>🐾</span>
-                      <span>Maksimum <strong>4 hayvan</strong> — aynı cins ve renk zorunlu</span>
+                      <span>ð¾</span>
+                      <span>Maksimum <strong>4 hayvan</strong> â aynÄ± cins ve renk zorunlu</span>
                     </div>
                   </div>
                 </div>
@@ -687,68 +752,190 @@ export default function YarismaKayitPage() {
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">{error}</div>
               )}
             </div>
+            )}
 
+            {(editId || formStep === 'form') && (
             <div className="sticky bottom-0 bg-white border-t border-gray-100 px-5 py-4 flex gap-3">
               <button onClick={handleSubmitAnimal} disabled={submitting}
                 className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors disabled:opacity-50">
-                {submitting ? 'Kaydediliyor...' : (editId ? 'Güncelle' : 'Ekle')}
+                {submitting ? 'Kaydediliyor...' : (editId ? 'GÃ¼ncelle' : 'Ekle')}
               </button>
               <button onClick={() => setShowModal(false)}
                 className="px-5 text-gray-600 hover:text-gray-800 text-sm py-2.5">
-                İptal
+                Ä°ptal
               </button>
             </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* Sergi Yönetmeliği Onay Modalı */}
-      {showRegulationModal && competition?.regulationDocument && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl flex flex-col" style={{maxHeight: '90vh'}}>
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-              <h2 className="font-bold text-gray-800 text-lg">Sergi Yönetmeliği</h2>
-              <button onClick={() => setShowRegulationModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">×</button>
+      {/* Detay ModalÄ± */}
+      {showDetailModal && detailGroupId !== null && (() => {
+        const detailGroup = groups.find(g => g.id === detailGroupId)
+        const detailAnimals = animals.filter(a => a.collectionGroupId === detailGroupId)
+        return (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div className="bg-white w-full sm:rounded-2xl sm:max-w-md max-h-[90vh] overflow-y-auto">
+              <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between">
+                <h2 className="font-bold text-gray-800">Koleksiyon {detailGroup?.groupNumber} â Detay</h2>
+                <button onClick={() => setShowDetailModal(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">Ã</button>
+              </div>
+              <div className="p-5">
+                <div className="mb-3 flex items-center gap-2">
+                  <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${detailAnimals.length >= 4 ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                    {detailAnimals.length}/4 hayvan
+                  </span>
+                  {detailAnimals[0] && (
+                    <span className="text-xs text-gray-500">{detailAnimals[0].species} / {detailAnimals[0].color}</span>
+                  )}
+                </div>
+                {detailAnimals.length === 0 ? (
+                  <p className="text-sm text-gray-400 text-center py-6">HenÃ¼z hayvan eklenmedi.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {detailAnimals.map((a, i) => (
+                      <div key={a.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                        <span className="w-7 h-7 rounded-full bg-primary-100 text-primary-700 text-xs font-bold flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-gray-800">
+                            {TYPE_LABELS[a.animalType]}
+                            {a.breed ? ` (${a.breed === 'DEV' ? 'Dev' : 'CÃ¼ce'})` : ''}
+                            {a.gender ? ` Â· ${a.gender === 'ERKEK' ? 'Erkek' : 'DiÅi'}` : ''}
+                          </div>
+                          <div className="text-xs text-gray-500">{a.species} / {a.color}</div>
+                        </div>
+                        <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${STATUS_MAP[a.status]?.color}`}>
+                          {STATUS_MAP[a.status]?.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {detailAnimals.length < 4 && (
+                  <button
+                    onClick={() => { setShowDetailModal(false); openAdd('COLLECTION', detailGroupId) }}
+                    className="mt-4 w-full bg-primary-600 text-white text-sm font-medium py-2.5 rounded-xl hover:bg-primary-700 transition-colors">
+                    + Hayvan Ekle ({4 - detailAnimals.length} daha gerekli)
+                  </button>
+                )}
+              </div>
             </div>
-            <div className="flex-1 overflow-hidden p-4" style={{minHeight: '400px'}}>
-              <iframe
-                src={competition.regulationDocument.fileUrl}
-                className="w-full h-full rounded-lg border border-gray-200"
-                style={{minHeight: '380px'}}
-                title="Sergi Yönetmeliği"
-              />
+          </div>
+        )
+      })()}
+
+      {/* Ä°nceleme ModalÄ± */}
+      {showReviewModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white w-full sm:rounded-2xl sm:max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between">
+              <h2 className="font-bold text-gray-800">ð KayÄ±t Listesini Ä°ncele</h2>
+              <button onClick={() => setShowReviewModal(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">Ã</button>
             </div>
-            <div className="px-6 py-4 border-t border-gray-100 space-y-4">
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={regulationAccepted}
-                  onChange={e => setRegulationAccepted(e.target.checked)}
-                  className="w-5 h-5 mt-0.5 text-primary-600 rounded flex-shrink-0"
-                />
-                <span className="text-sm text-gray-700 font-medium">
-                  Okudum Anladım. Kabul ediyorum.
-                </span>
-              </label>
-              <div className="flex gap-3">
+            <div className="p-5 space-y-5">
+              {/* Tek hayvanlar */}
+              {animals.filter(a => a.status === 'pending' && a.entryType === 'SINGLE').length > 0 && (
+                <div>
+                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                    Tek Hayvanlar ({animals.filter(a => a.status === 'pending' && a.entryType === 'SINGLE').length})
+                  </div>
+                  <div className="space-y-1.5">
+                    {animals.filter(a => a.status === 'pending' && a.entryType === 'SINGLE').map((a, i) => (
+                      <div key={a.id} className="flex items-center gap-2 p-2.5 bg-gray-50 rounded-lg text-sm">
+                        <span className="w-5 h-5 rounded-full bg-gray-200 text-gray-600 text-xs font-bold flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                        <span className="font-medium text-gray-800">{TYPE_LABELS[a.animalType]}</span>
+                        <span className="text-gray-400">Â·</span>
+                        <span className="text-gray-600">{a.species} / {a.color}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {/* Koleksiyonlar */}
+              {groups.filter(g => animals.some(a => a.collectionGroupId === g.id && a.status === 'pending')).map(g => {
+                const gAnimals = animals.filter(a => a.collectionGroupId === g.id && a.status === 'pending')
+                return (
+                  <div key={g.id}>
+                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                      Koleksiyon {g.groupNumber} ({gAnimals.length}/4)
+                    </div>
+                    <div className="space-y-1.5">
+                      {gAnimals.map((a, i) => (
+                        <div key={a.id} className="flex items-center gap-2 p-2.5 bg-purple-50 rounded-lg text-sm">
+                          <span className="w-5 h-5 rounded-full bg-purple-100 text-purple-700 text-xs font-bold flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                          <span className="font-medium text-gray-800">
+                            {TYPE_LABELS[a.animalType]}
+                            {a.gender ? ` Â· ${a.gender === 'ERKEK' ? 'Erkek' : 'DiÅi'}` : ''}
+                          </span>
+                          <span className="text-gray-400">Â·</span>
+                          <span className="text-gray-600">{a.species} / {a.color}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+              <div className="pt-2">
                 <button
-                  onClick={doSubmitAll}
-                  disabled={!regulationAccepted || submitAllLoading}
-                  className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 rounded-xl text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  {submitAllLoading ? 'Gönderiliyor...' : 'Onayla ve Başkana Gönder'}
+                  onClick={() => { setShowReviewModal(false); setRegulationAccepted(false); setShowRegulationModal(true) }}
+                  className="w-full bg-primary-600 text-white font-semibold py-3 rounded-xl hover:bg-primary-700 transition-colors">
+                  Devam Et â YÃ¶netmeliÄi Onayla
                 </button>
-                <button
-                  onClick={() => setShowRegulationModal(false)}
-                  className="px-5 text-gray-600 hover:text-gray-800 text-sm"
-                >
-                  İptal
+                <button onClick={() => setShowReviewModal(false)} className="w-full text-gray-500 text-sm mt-2 py-2">
+                  Geri DÃ¶n
                 </button>
               </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* Sergi YÃ¶netmeliÄi Onay ModalÄ± */}
+      {showRegulationModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white w-full sm:rounded-2xl sm:max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between">
+              <h2 className="font-bold text-gray-800">Sergi YÃ¶netmeliÄi</h2>
+              <button onClick={() => setShowRegulationModal(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">Ã</button>
+            </div>
+            <div className="p-5 space-y-4">
+              {competition?.regulationDocument?.fileUrl ? (
+                <iframe
+                  src={competition.regulationDocument.fileUrl}
+                  className="w-full h-72 rounded-xl border border-gray-200"
+                  title="Sergi YÃ¶netmeliÄi"
+                />
+              ) : (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
+                  â¹ï¸ Sergi yÃ¶netmeliÄi belgesi henÃ¼z yÃ¼klenmemiÅ. YÃ¶netmeligi teyit ederek devam edebilirsiniz.
+                </div>
+              )}
+              <label className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={regulationAccepted}
+                  onChange={e => setRegulationAccepted(e.target.checked)}
+                  className="mt-0.5 flex-shrink-0 w-4 h-4 cursor-pointer"
+                />
+                <span className="text-sm text-amber-900 leading-relaxed">
+                  Sergi yÃ¶netmeliÄini okudum, anladÄ±m ve tÃ¼m ÅartlarÄ±nÄ± kabul ediyorum. GÃ¶nderilen kayÄ±tlarda dÃ¼zenleme yapÄ±lamayacaÄÄ±nÄ± biliyorum.
+                </span>
+              </label>
+              <button
+                onClick={doSubmitAll}
+                disabled={!regulationAccepted || submitAllLoading}
+                className="w-full bg-primary-600 text-white font-semibold py-3 rounded-xl hover:bg-primary-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                {submitAllLoading ? 'GÃ¶nderiliyor...' : 'Onayla ve BaÅkana GÃ¶nder'}
+              </button>
+              <button onClick={() => { setShowRegulationModal(false); setShowReviewModal(true) }} className="w-full text-gray-500 text-sm py-1.5">
+                â Geri
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
