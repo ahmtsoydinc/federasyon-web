@@ -52,6 +52,7 @@ const EMPTY_FORM: FormData = {
 }
 
 export default function YarismaKayitPage() {
+  const [competitions, setCompetitions] = useState<any[]>([])
   const [competition, setCompetition] = useState<any>(null)
   const [registrationOpen, setRegistrationOpen] = useState(false)
   const [animals, setAnimals] = useState<any[]>([])
@@ -77,7 +78,7 @@ export default function YarismaKayitPage() {
 
   const fetchData = useCallback(async () => {
     const [compRes, animRes, grpRes] = await Promise.all([
-      fetch('/api/competitions/active'),
+      fetch('/api/competitions/active-all'),
       fetch('/api/competition-animals'),
       fetch('/api/collection-groups'),
     ])
@@ -85,16 +86,37 @@ export default function YarismaKayitPage() {
     const animData = await animRes.json()
     const grpData = await grpRes.json()
 
-    setCompetition(compData.competition)
-    setRegistrationOpen(compData.registrationOpen ?? false)
-    if (compData.competition) {
-      setAnimals(Array.isArray(animData) ? animData.filter((a: any) => a.competitionId === compData.competition.id) : [])
-      setGroups(Array.isArray(grpData) ? grpData.filter((g: any) => g.competitionId === compData.competition.id) : [])
+    const compList: any[] = Array.isArray(compData.competitions) ? compData.competitions : []
+    setCompetitions(compList)
+
+    // Tek yarışma varsa otomatik seç, birden fazlaysa kullanıcı seçecek
+    const autoComp = compList.length === 1 ? compList[0] : null
+    setCompetition(autoComp)
+    setRegistrationOpen(autoComp?.registrationOpen ?? false)
+    if (autoComp) {
+      setAnimals(Array.isArray(animData) ? animData.filter((a: any) => a.competitionId === autoComp.id) : [])
+      setGroups(Array.isArray(grpData) ? grpData.filter((g: any) => g.competitionId === autoComp.id) : [])
     }
     setLoading(false)
   }, [])
 
   useEffect(() => { fetchData() }, [fetchData])
+
+  // Birden fazla yarışma varken kullanıcı yarışma seçtiğinde
+  const selectCompetition = useCallback(async (comp: any) => {
+    setCompetition(comp)
+    setRegistrationOpen(comp.registrationOpen ?? false)
+    // Hayvanları ve grupları seçilen yarışmaya göre yeniden yükle
+    const [animRes, grpRes] = await Promise.all([
+      fetch('/api/competition-animals'),
+      fetch('/api/collection-groups'),
+    ])
+    const animData = await animRes.json()
+    const grpData = await grpRes.json()
+    setAnimals(Array.isArray(animData) ? animData.filter((a: any) => a.competitionId === comp.id) : [])
+    setGroups(Array.isArray(grpData) ? grpData.filter((g: any) => g.competitionId === comp.id) : [])
+  }, [])
+
 
   // Cins listesi yükle
   useEffect(() => {
@@ -241,6 +263,41 @@ export default function YarismaKayitPage() {
 
   if (loading) return <div className="py-20 text-center text-gray-400">Yükleniyor...</div>
 
+  // Birden fazla aktif yarışma varsa seçim ekranı
+  if (!competition && competitions.length > 1) return (
+    <div className="max-w-lg mx-auto py-10">
+      <div className="text-center mb-8">
+        <div className="text-5xl mb-3">🏆</div>
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">Yarışma Seçin</h2>
+        <p className="text-gray-500 text-sm">Kayıt olmak istediğiniz yarışmayı seçin</p>
+      </div>
+      <div className="space-y-3">
+        {competitions.map(c => (
+          <button
+            key={c.id}
+            onClick={() => selectCompetition(c)}
+            className="w-full text-left p-5 bg-white rounded-2xl border-2 border-gray-200 hover:border-primary-400 hover:bg-primary-50 transition-all shadow-sm"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="font-bold text-gray-800 text-base">{c.name}</div>
+                <div className="text-sm text-gray-500 mt-1">
+                  {new Date(c.registrationStart).toLocaleDateString('tr-TR')} — {new Date(c.registrationEnd).toLocaleDateString('tr-TR')}
+                </div>
+              </div>
+              <div className="flex-shrink-0">
+                {c.registrationOpen
+                  ? <span className="text-xs bg-green-100 text-green-700 px-2.5 py-1 rounded-full font-medium">Kayıt Açık</span>
+                  : <span className="text-xs bg-gray-100 text-gray-500 px-2.5 py-1 rounded-full font-medium">Kayıt Kapalı</span>
+                }
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+
   if (!competition) return (
     <div className="text-center py-20">
       <div className="text-5xl mb-4">🏆</div>
@@ -337,6 +394,11 @@ export default function YarismaKayitPage() {
 
   return (
     <div>
+      {competitions.length > 1 && (
+        <button onClick={() => setCompetition(null)} className="text-sm text-primary-600 hover:text-primary-800 mb-4 flex items-center gap-1">
+          ← Yarışma Değiştir
+        </button>
+      )}
       <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">{competition.name}</h1>
