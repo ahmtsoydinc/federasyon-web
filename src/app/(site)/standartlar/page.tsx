@@ -18,6 +18,7 @@ interface Standard {
   breedDate?: string
   colourDate?: string
   isDraft: boolean
+  badge?: string | null
   order: number
   images: StandardImage[]
 }
@@ -64,7 +65,11 @@ export default function StandartlarPage() {
       .then((r) => r.json())
       .then((data: Category[]) => {
         setCategories(data)
-        if (data.length > 0) setActiveSlug(data[0].slug)
+        if (data.length > 0) {
+          const want = new URLSearchParams(window.location.search).get('kategori')
+          const found = want ? data.find((c) => c.slug === want) : undefined
+          setActiveSlug((found || data[0]).slug)
+        }
         setLoading(false)
       })
       .catch(() => setLoading(false))
@@ -94,7 +99,7 @@ export default function StandartlarPage() {
       filter === 'all' ||
       (filter === 'breed' && !!s.breedPdfUrl) ||
       (filter === 'colour' && !!s.colourPdfUrl) ||
-      (filter === 'recent' && !!(s.breedDate || s.colourDate))
+      (filter === 'recent' && !!s.badge)
     return matchSearch && matchFilter
   })
 
@@ -210,6 +215,11 @@ export default function StandartlarPage() {
                             )}
                             <div>
                               <span className="font-medium text-gray-800">{s.name}</span>
+                              {s.badge && (
+                                <span className={'ml-1.5 text-[10px] px-1.5 py-0.5 rounded font-bold ' + (s.badge.startsWith('YEN') ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700')}>
+                                  {s.badge}
+                                </span>
+                              )}
                               {s.subtitle && (
                                 <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-700 font-medium">
                                   {s.subtitle}

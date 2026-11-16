@@ -400,20 +400,18 @@ export default async function HomePage() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-4">
             {[
-              { emoji: '📋', name: 'Terminoloji ve\nGenel Listeler',  bg: 'from-slate-50 to-gray-100',    iconBg: 'bg-slate-100',   href: 'https://tshfedstandartlar.com/' },
-              { emoji: '🐓', name: 'Dev Irk Tavuk\nStandartları',     bg: 'from-red-50 to-rose-50',       iconBg: 'bg-red-100',     href: 'https://tshfedstandartlar.com/Dev.php' },
-              { emoji: '🐤', name: 'Cüce Tavuk\nStandartları',        bg: 'from-yellow-50 to-amber-50',   iconBg: 'bg-yellow-100',  href: 'https://tshfedstandartlar.com/Cuce.php' },
-              { emoji: '🪿', name: 'Kaz\nStandartları',               bg: 'from-green-50 to-emerald-50',  iconBg: 'bg-green-100',   href: 'https://tshfedstandartlar.com/Kaz.php' },
-              { emoji: '🦆', name: 'Ördek\nStandartları',             bg: 'from-blue-50 to-cyan-50',      iconBg: 'bg-blue-100',    href: 'https://tshfedstandartlar.com/Ordek.php' },
-              { emoji: '🦃', name: 'Hindi\nStandartları',             bg: 'from-orange-50 to-amber-50',   iconBg: 'bg-orange-100',  href: 'https://tshfedstandartlar.com/Hindi.php' },
-              { emoji: '🐦', name: 'Beç\nTavukları',                  bg: 'from-purple-50 to-violet-50',  iconBg: 'bg-purple-100',  href: 'https://tshfedstandartlar.com/Bec.php' },
-              { emoji: '🇹🇷', name: 'Yerli Irkları\nTaslaklar',       bg: 'from-red-50 to-orange-50',     iconBg: 'bg-red-100',     href: 'https://tshfedstandartlar.com/Yerli.php' },
+              { emoji: '📋', name: 'Terminoloji ve\nGenel Listeler',  bg: 'from-slate-50 to-gray-100',    iconBg: 'bg-slate-100',   href: '/standartlar?kategori=terminoloji' },
+              { emoji: '🐓', name: 'Dev Irk Tavuk\nStandartları',     bg: 'from-red-50 to-rose-50',       iconBg: 'bg-red-100',     href: '/standartlar?kategori=dev-irk' },
+              { emoji: '🐤', name: 'Cüce Tavuk\nStandartları',        bg: 'from-yellow-50 to-amber-50',   iconBg: 'bg-yellow-100',  href: '/standartlar?kategori=cuce' },
+              { emoji: '🪿', name: 'Kaz\nStandartları',               bg: 'from-green-50 to-emerald-50',  iconBg: 'bg-green-100',   href: '/standartlar?kategori=kaz' },
+              { emoji: '🦆', name: 'Ördek\nStandartları',             bg: 'from-blue-50 to-cyan-50',      iconBg: 'bg-blue-100',    href: '/standartlar?kategori=ordek' },
+              { emoji: '🦃', name: 'Hindi\nStandartları',             bg: 'from-orange-50 to-amber-50',   iconBg: 'bg-orange-100',  href: '/standartlar?kategori=hindi' },
+              { emoji: '🐦', name: 'Beç\nTavukları',                  bg: 'from-purple-50 to-violet-50',  iconBg: 'bg-purple-100',  href: '/standartlar?kategori=bec' },
+              { emoji: '🇹🇷', name: 'Yerli Irkları\nTaslaklar',       bg: 'from-red-50 to-orange-50',     iconBg: 'bg-red-100',     href: '/standartlar?kategori=yerli' },
             ].map((b) => (
               <a
                 key={b.name}
                 href={b.href}
-                target="_blank"
-                rel="noopener noreferrer"
                 className={`group bg-gradient-to-br ${b.bg} rounded-2xl border border-white shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 p-4 sm:p-5 flex flex-col items-center text-center gap-3`}
               >
                 <div className={`w-12 h-12 sm:w-14 sm:h-14 ${b.iconBg} rounded-2xl flex items-center justify-center text-2xl sm:text-3xl shadow-sm`}>
