@@ -40,3 +40,8 @@ insert-*.mjs
 check-*.js
 check-*.mjs
 public/uploads/
+
+# Sunucuya ozel ortam dosyalari ve yedekler
+.env.server
+*.bak
+*.bak-*
