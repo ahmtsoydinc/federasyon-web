@@ -69,6 +69,7 @@ export default function YarismaKayitPage() {
   const [submitted, setSubmitted] = useState(false)
   const [lockedSpecies, setLockedSpecies] = useState<string | null>(null)
   const [lockedColor, setLockedColor] = useState<string | null>(null)
+  const [lockedBreed, setLockedBreed] = useState<string | null>(null)
   const [formStep, setFormStep] = useState<'select' | 'form'>('select')
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [detailGroupId, setDetailGroupId] = useState<number | null>(null)
@@ -125,7 +126,7 @@ export default function YarismaKayitPage() {
     if (hasBreed(form.animalType) && form.breed) params.set('breed', form.breed)
     fetch(`/api/animal-standards?${params}`)
       .then(r => r.json())
-      .then(data => { setSpeciesList(Array.isArray(data) ? data : []); setForm(f => ({ ...f, species: '', color: '' })) })
+      .then(data => { setSpeciesList(Array.isArray(data) ? data : []); setForm(f => ({ ...f, species: lockedSpecies || '', color: lockedSpecies ? (lockedColor || '') : '' })) })
   }, [form.animalType, form.breed])
 
   // Renk listesi yükle
@@ -135,7 +136,7 @@ export default function YarismaKayitPage() {
     if (hasBreed(form.animalType) && form.breed) params.set('breed', form.breed)
     fetch(`/api/animal-standards?${params}`)
       .then(r => r.json())
-      .then(data => { setColorList(Array.isArray(data) ? data : []); setForm(f => ({ ...f, color: '' })) })
+      .then(data => { setColorList(Array.isArray(data) ? data : []); setForm(f => ({ ...f, color: lockedColor || '' })) })
   }, [form.animalType, form.breed, form.species])
 
   // Koleksiyon grubu seçilince cins ve rengi kilitle
@@ -145,12 +146,15 @@ export default function YarismaKayitPage() {
     if (groupAnimals.length > 0) {
       const sp = groupAnimals[0].species
       const cl = groupAnimals[0].color
+      const br = groupAnimals[0].breed || null
       setLockedSpecies(sp)
       setLockedColor(cl)
-      setForm(f => ({ ...f, species: sp, color: cl }))
+      setLockedBreed(br)
+      setForm(f => ({ ...f, species: sp, color: cl, ...(br ? { breed: br } : {}) }))
     } else {
       setLockedSpecies(null)
       setLockedColor(null)
+      setLockedBreed(null)
     }
   }, [form.collectionGroupId, animals])
 
@@ -159,12 +163,36 @@ export default function YarismaKayitPage() {
     const initForm: FormData = { ...EMPTY_FORM }
     if (entryType) {
       initForm.entryType = entryType
-      if (groupId) initForm.collectionGroupId = String(groupId)
+      if (groupId) {
+        initForm.collectionGroupId = String(groupId)
+        const existing = animals.filter((a: any) => a.collectionGroupId === groupId)
+        if (existing.length > 0) {
+          const sp = existing[0].species || null
+          const cl = existing[0].color || null
+          const br = existing[0].breed || null
+          setLockedSpecies(sp)
+          setLockedColor(cl)
+          setLockedBreed(br)
+          if (sp) initForm.species = sp
+          if (cl) initForm.color = cl
+          if (br) initForm.breed = br
+        } else {
+          setLockedSpecies(null)
+          setLockedColor(null)
+          setLockedBreed(null)
+        }
+      } else {
+        setLockedSpecies(null)
+        setLockedColor(null)
+        setLockedBreed(null)
+      }
+    } else {
+      setLockedSpecies(null)
+      setLockedColor(null)
+      setLockedBreed(null)
     }
     setForm(initForm)
     setError('')
-    setLockedSpecies(null)
-    setLockedColor(null)
     setFormStep(entryType ? 'form' : 'select')
     setShowModal(true)
   }
@@ -192,11 +220,56 @@ export default function YarismaKayitPage() {
 
   const handleDelete = async (id: number) => {
     if (!confirm('Bu hayvanı silmek istediğinizden emin misiniz?')) return
-    await fetch(`/api/competition-animals/${id}`, { method: 'DELETE' })
+    const res = await fetch(`/api/competition-animals/${id}`, { method: 'DELETE' })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      setError(data.error || 'Silme islemi basarisiz oldu')
+      return
+    }
+    fetchData()
+  }
+
+  const handleDeleteCollection = async (groupId: number) => {
+    if (!confirm('Bu koleksiyonu ve icindeki tum hayvanlari silmek istediginizden emin misiniz?')) return
+    const groupAnimals = animals.filter((a: any) => a.collectionGroupId === groupId)
+    for (const animal of groupAnimals) {
+      const res = await fetch(`/api/competition-animals/${animal.id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setError(data.error || 'Koleksiyon silme basarisiz oldu')
+        return
+      }
+    }
+    const grpRes = await fetch(`/api/collection-groups/${groupId}`, { method: 'DELETE' })
+    if (!grpRes.ok) {
+      const data = await grpRes.json().catch(() => ({}))
+      setError(data.error || 'Koleksiyon grubu silme basarisiz oldu')
+      return
+    }
     fetchData()
   }
 
   const handleSubmitAnimal = async () => {
+    if (form.animalType === 'TAVSAN') {
+      const cip = (form.chipNumber || '').trim()
+      const sol = (form.tattooLeftEar || '').trim()
+      const sag = (form.tattooRightEar || '').trim()
+      if (!cip && !(sol && sag)) {
+        setError('Tavşan için Cip Numarası veya Dövme Numarası (Sol ve Sağ kulak) zorunludur')
+        return
+      }
+      if (cip && cip.length !== 15) {
+        setError('Cip numarası 15 hane olmalı')
+        return
+      }
+      if (!cip && (sol.length !== 6 || sag.length !== 7)) {
+        setError('Dövme numarası: sol kulak 6, sağ kulak 7 hane olmalı')
+        return
+      }
+    } else if (!form.braceletNumber || !form.braceletNumber.trim()) {
+      setError('Bilezik numarasi zorunludur')
+      return
+    }
     setError('')
     setSubmitting(true)
 
@@ -232,9 +305,24 @@ export default function YarismaKayitPage() {
     const data = await res.json()
     setSubmitting(false)
 
-    if (!res.ok) { setError(data.error || 'Hata oluştu'); return }
-    setShowModal(false)
-    fetchData()
+    if (!res.ok) { setError(data.error || 'Hata olustu'); return }
+    // For COLLECTION: stay on form with locked fields for next animal
+    if (form.entryType === 'COLLECTION' && !editId) {
+      const nextForm: FormData = {
+        animalType: form.animalType, breed: '', gender: '', species: form.species,
+        color: form.color, braceletYear: '', braceletNumber: '',
+        chipNumber: '', tattooLeftEar: '', tattooRightEar: '',
+        birthMonth: '', birthYear: '', entryType: form.entryType,
+        collectionGroupId: form.collectionGroupId,
+      }
+      setForm(nextForm)
+      setError('')
+      setSubmitting(false)
+      fetchData()
+    } else {
+      setShowModal(false)
+      fetchData()
+    }
   }
 
   const handleSubmitAll = () => {
@@ -454,6 +542,10 @@ export default function YarismaKayitPage() {
                         className="text-xs text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
                         Detay
                       </button>
+                      <button onClick={() => handleDeleteCollection(g.id)}
+                        className="text-xs text-red-600 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors">
+                        Koleksiyonu Sil
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -647,7 +739,7 @@ export default function YarismaKayitPage() {
                   <label className="block text-xs font-medium text-gray-600 mb-2">Irk *</label>
                   <div className="grid grid-cols-2 gap-2">
                     {BREEDS.map(b => (
-                      <button key={b.value} onClick={() => setF('breed', b.value)}
+                      <button key={b.value} onClick={() => { if (!lockedBreed) setF('breed', b.value) }} disabled={!!lockedBreed}
                         className={`py-2 text-xs font-medium rounded-lg border transition-colors ${form.breed === b.value ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
                         {b.label}
                       </button>

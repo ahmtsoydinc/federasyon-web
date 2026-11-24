@@ -57,6 +57,8 @@ export default function BaskanPage() {
   const [animalNotes, setAnimalNotes] = useState<Record<number, string>>({})
   const [animalProcessing, setAnimalProcessing] = useState<number | null>(null)
   const [activeCompetition, setActiveCompetition] = useState<any>(null)
+  const [competitions, setCompetitions] = useState<any[]>([])
+  const [selectedCompetitionId, setSelectedCompetitionId] = useState<number | null>(null)
 
   // Uye yonetim state
   const [members, setMembers] = useState<any[]>([])
@@ -87,17 +89,27 @@ export default function BaskanPage() {
       .finally(() => setOrdersLoading(false))
   }
 
-  const fetchAnimals = async () => {
+  const fetchAnimals = async (compId?: number) => {
     setAnimalsLoading(true)
-    const compRes = await fetch('/api/competitions/active')
-    const compData = await compRes.json()
-    if (compData.competition) {
-      setActiveCompetition(compData.competition)
-      const animalRes = await fetch(`/api/competition-animals?competitionId=${compData.competition.id}`)
-      const data = await animalRes.json()
-      setAnimals(Array.isArray(data) ? data : [])
-    }
+    const targetId = compId ?? selectedCompetitionId
+    if (!targetId) { setAnimalsLoading(false); return }
+    const animalRes = await fetch(`/api/competition-animals?competitionId=${targetId}`)
+    const data = await animalRes.json()
+    setAnimals(Array.isArray(data) ? data : [])
     setAnimalsLoading(false)
+  }
+
+  const fetchCompetitions = async () => {
+    const res = await fetch('/api/competitions/active-all')
+    const data = await res.json()
+    const list: any[] = data.competitions || []
+    setCompetitions(list)
+    if (list.length > 0) {
+      const first = list[0]
+      setSelectedCompetitionId(first.id)
+      setActiveCompetition(first)
+      fetchAnimals(first.id)
+    }
   }
 
   const fetchMembers = () => {
@@ -141,8 +153,12 @@ export default function BaskanPage() {
 
   useEffect(() => {
     fetchOrders()
-    fetchAnimals()
+    fetchCompetitions()
   }, [])
+
+  useEffect(() => {
+    if (selectedCompetitionId) fetchAnimals()
+  }, [selectedCompetitionId])
 
   useEffect(() => {
     if (tab === 'uyeler') fetchMembers()
@@ -369,6 +385,24 @@ export default function BaskanPage() {
       {/* YARIŞMA SEKMESİ */}
       {tab === 'yarisma' && (
         <>
+          {competitions.length > 1 && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Yarışma Seçin</label>
+              <select
+                value={selectedCompetitionId ?? ''}
+                onChange={e => {
+                  const id = Number(e.target.value)
+                  setSelectedCompetitionId(id)
+                  setActiveCompetition(competitions.find(c => c.id === id) || null)
+                }}
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary-400"
+              >
+                {competitions.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
           {!activeCompetition ? (
             <div className="text-center py-16 text-gray-400">
               <div className="text-5xl mb-3">🏆</div>

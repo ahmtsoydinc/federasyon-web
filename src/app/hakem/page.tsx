@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const TYPE_LABELS: Record<string, string> = {
   TAVUK: 'Tavuk', HOROZ: 'Horoz', ORDEK: 'Ördek', GUVERCIN: 'Güvercin',
@@ -25,6 +25,8 @@ interface AnimalInfo {
 }
 
 export default function HakemPage() {
+  const [competitions, setCompetitions] = useState<any[]>([])
+  const [selectedCompetitionId, setSelectedCompetitionId] = useState<number | null>(null)
   const [cageInput, setCageInput] = useState('')
   const [animal, setAnimal] = useState<AnimalInfo | null>(null)
   const [notFound, setNotFound] = useState(false)
@@ -38,6 +40,16 @@ export default function HakemPage() {
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState('')
 
+  useEffect(() => {
+    fetch('/api/competitions/active-all')
+      .then(r => r.json())
+      .then(data => {
+        const list: any[] = data.competitions || []
+        setCompetitions(list)
+        if (list.length > 0) setSelectedCompetitionId(list[0].id)
+      })
+  }, [])
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!cageInput.trim()) return
@@ -47,7 +59,8 @@ export default function HakemPage() {
     setSaved(false)
     setSaveError('')
 
-    const res = await fetch(`/api/hakem/cage/${cageInput.trim()}`)
+    const compParam = selectedCompetitionId ? `?competitionId=${selectedCompetitionId}` : ''
+    const res = await fetch(`/api/hakem/cage/${cageInput.trim()}${compParam}`)
     setSearching(false)
 
     if (res.status === 404) { setNotFound(true); return }
@@ -66,7 +79,8 @@ export default function HakemPage() {
     setSaving(true)
     setSaveError('')
 
-    const res = await fetch(`/api/hakem/cage/${animal.cageNumber}`, {
+    const saveCompParam = selectedCompetitionId ? `?competitionId=${selectedCompetitionId}` : ''
+    const res = await fetch(`/api/hakem/cage/${animal.cageNumber}${saveCompParam}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -102,6 +116,20 @@ export default function HakemPage() {
       <h1 className="text-2xl font-bold text-gray-800 mb-2">Kafes Sorgulama</h1>
       <p className="text-gray-500 text-sm mb-6">Kafes numarasını girerek hayvana ait bilgilere ulaşın ve değerlendirmenizi kaydedin.</p>
 
+      {competitions.length > 1 && (
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Yarışma Seçin</label>
+          <select
+            value={selectedCompetitionId ?? ''}
+            onChange={e => setSelectedCompetitionId(Number(e.target.value))}
+            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary-400"
+          >
+            {competitions.map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
       {/* Arama formu */}
       <form onSubmit={handleSearch} className="flex gap-3 mb-6">
         <input
